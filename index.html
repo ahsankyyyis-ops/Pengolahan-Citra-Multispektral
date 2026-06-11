@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoMinX - Pemetaan Mineral Satelit</title>
+    <title>GeoMinX - Multi-Band Mineral Analyzer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         :root {
             --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
-            --accent: #0ea5e9;
+            --accent: #38bdf8;
             --accent-hover: #0284c7;
             --text-main: #f8fafc;
-            --text-muted: #64748b;
+            --text-muted: #475569;
             --success: #22c55e;
+            --panel-bg: #ffffff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
@@ -28,235 +28,46 @@
             width: 380px; 
             background: var(--bg-secondary); 
             color: var(--text-main); 
-            padding: 30px 24px; 
+            padding: 25px; 
             display: flex; 
             flex-direction: column; 
-            gap: 24px; 
-            box-shadow: 6px 0 20px rgba(0,0,0,0.15); 
-            z-index: 1000; 
+            gap: 20px; 
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
+            z-index: 10; 
             overflow-y: auto; 
         }
         
-        .brand { margin-bottom: 10px; }
-        .brand h2 { font-size: 1.6rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
-        .brand p { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+        .brand h2 { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .brand p { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+        hr { border: 0; border-top: 1px solid #334155; }
         
         .step-card {
             background: var(--bg-primary);
             border: 1px solid #334155;
-            padding: 20px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .step-header { display: flex; align-items: center; gap: 10px; }
-        .step-num { 
-            background: var(--accent); 
-            color: var(--bg-primary); 
-            font-weight: 700; 
-            width: 24px; 
-            height: 24px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 0.8rem;
-        }
-        .step-title { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; }
-
-        /* AREA UPLOAD FILE */
-        .upload-zone { 
-            border: 2px dashed #475569; 
-            padding: 24px 15px; 
-            border-radius: 8px; 
-            text-align: center; 
-            background: #020617; 
-            cursor: pointer; 
-            transition: all 0.2s ease; 
-        }
-        .upload-zone:hover { border-color: var(--accent); background: #0f172a; }
-        .upload-zone p { font-size: 0.8rem; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
-        #file-input { display: none; }
-        #file-name { font-size: 0.85rem; color: var(--accent); margin-top: 10px; font-weight: 600; display: none; word-break: break-all; }
-
-        /* INPUT SELECT */
-        select { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 8px; 
-            border: 1px solid #334155; 
-            background: #020617; 
-            color: white; 
-            font-size: 0.9rem; 
-            outline: none; 
+        .step-title { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; }
+        
+        /* MULTI-BAND UPLOAD GRID */
+        .band-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .band-box {
+            border: 1px dashed #475569;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            background: #020617;
             cursor: pointer;
-            transition: border 0.2s;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            transition: all 0.2s;
         }
-        select:focus { border-color: var(--accent); }
+        .band-box:hover { border-color: var(--accent); color: white; }
+        .band-box.loaded { border-color: var(--success); color: var(--success); background: #052e16; }
         
-        /* TOMBOL & LOADING */
-        .btn { 
-            width: 100%; 
-            padding: 14px; 
-            border-radius: 8px; 
-            border: none; 
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-primary { background: var(--accent); color: var(--bg-primary); }
-        .btn-primary:hover { background: #38bdf8; transform: translateY(-1px); }
-        .btn-primary:active { transform: translateY(0); }
-        
-        .btn-success { background: var(--success); color: white; display: none; margin-top: 12px; }
-        .btn-success:hover { background: #16a34a; }
-
-        /* Progress Bar Loading */
-        #loading-container { display: none; margin-top: 10px; }
-        .progress-text { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 6px; text-align: center; }
-        .progress-bar { width: 100%; height: 6px; background: #334155; border-radius: 10px; overflow: hidden; }
-        .progress-fill { width: 0%; height: 100%; background: var(--accent); animation: loadSimulate 3s linear forwards; }
-
-        @keyframes loadSimulate {
-            0% { width: 0%; }
-            30% { width: 40%; }
-            70% { width: 75%; }
-            100% { width: 100%; }
-        }
-
-        /* AREA PETA */
-        #map { flex-grow: 1; height: 100%; }
-        
-        /* Custom Popup Peta */
-        .leaflet-popup-content-wrapper { background: var(--bg-secondary); color: white; border-radius: 8px; }
-        .leaflet-popup-tip { background: var(--bg-secondary); }
-    </style>
-</head>
-<body>
-
-    <div id="sidebar">
-        <div class="brand">
-            <h2>GeoMinX Platform</h2>
-            <p>Sistem Deteksi Spektral Mineral Satelit</p>
-        </div>
-        
-        <div class="step-card">
-            <div class="step-header">
-                <div class="step-num">1</div>
-                <div class="step-title">Unggah Citra Satelit</div>
-            </div>
-            <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-                <svg width="28" height="28" fill="none" stroke="var(--accent)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" style="margin:0 auto;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                <p>Pilih file format <b>.TIF</b> atau <b>.ZIP</b> mentah hasil download satelit</p>
-                <div id="file-name"></div>
-            </div>
-            <input type="file" id="file-input" accept=".tif,.tiff,.zip" onchange="handleFileSelect(event)">
-        </div>
-
-        <div class="step-card">
-            <div class="step-header">
-                <div class="step-num">2</div>
-                <div class="step-title">Target Identifikasi</div>
-            </div>
-            <select id="mineral-select">
-                <option value="clay">Clay Alteration (Mineral Lempung)</option>
-                <option value="iron_oxide">Iron Oxide (Besi Oksida / Hematit)</option>
-                <option value="ferrous_iron">Ferrous Iron (Batuan Kandungan Besi)</option>
-            </select>
-        </div>
-
-        <div>
-            <button class="btn btn-primary" onclick="mulaiIdentifikasi()">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                Mulai Analisis Spektral
-            </button>
-
-            <div id="loading-container">
-                <div class="progress-text">Memproses algoritma rasio band...</div>
-                <div class="progress-bar"><div class="progress-fill"></div></div>
-            </div>
-
-            <button class="btn btn-success" id="btn-download" onclick="alert('Mengunduh peta hasil deteksi mineral (GeoTIFF)...')">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Unduh Hasil Analisis (.TIF)
-            </button>
-        </div>
-    </div>
-
-    <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Inisialisasi peta dengan peta satelit kualitas tinggi
-        var map = L.map('map', {zoomControl: false}).setView([-2.5, 121.5], 6);
-        
-        // Pindahkan tombol zoom ke kanan agar tidak mengganggu sidebar
-        L.control.zoom({ position: 'topright' }).addTo(map);
-
-        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            attribution: '© Google Satellite Imagery'
-        }).addTo(map);
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const nameDiv = document.getElementById('file-name');
-                nameDiv.innerText = "📄 " + file.name;
-                nameDiv.style.display = "block";
-            }
-        }
-
-        function mulaiIdentifikasi() {
-            const fileInput = document.getElementById('file-input');
-            const mineral = document.getElementById('mineral-select').value;
-            const loading = document.getElementById('loading-container');
-            const btnDownload = document.getElementById('btn-download');
-
-            if (fileInput.files.length === 0) {
-                alert("Silakan pilih atau masukkan file citra satelit pada Langkah 1 terlebih dahulu!");
-                return;
-            }
-
-            loading.style.display = "block";
-            btnDownload.style.display = "none";
-
-            setTimeout(() => {
-                loading.style.display = "none";
-                btnDownload.style.display = "flex";
-                
-                // Fokus peta bergeser secara halus ke area sampel tambang
-                map.flyTo([-2.48, 121.28], 13, { animate: true, duration: 2 });
-
-                // Overlay warna area mineral
-                var geoColor = (mineral === 'clay') ? '#ea580c' : '#eab308';
-                var mineralName = (mineral === 'clay') ? 'Clay (Lempung Alterasi)' : 'Iron Oxide (Besi Oksida)';
-
-                var resultLayer = L.rectangle([
-                    [-2.52, 121.22],
-                    [-2.44, 121.34]
-                ], {
-                    color: geoColor,
-                    weight: 2,
-                    fillColor: geoColor,
-                    fillOpacity: 0.45
-                }).addTo(map);
-
-                resultLayer.bindPopup(`
-                    <div style="color:white; font-family:'Inter',sans-serif;">
-                        <h4 style="margin-bottom:5px; color:#38bdf8;">Kandungan Terdeteksi</h4>
-                        <p style="font-size:13px;">Zona anomali spektral tinggi untuk tipe <b>${mineralName}</b>.</p>
-                    </div>
-                `).openPopup();
-
-            }, 3000); 
-        }
-    </script>
-</body>
-</html>
+        select, .btn { 
+            width: 100%; padding: 12px; border-radius: 6px; font-size: 0.
