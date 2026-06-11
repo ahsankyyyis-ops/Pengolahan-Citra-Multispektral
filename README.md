@@ -1,1 +1,1 @@
-# Pengolahan-Citra-Multispektral
+# Identifkasi Mineral Menggunakan Citra Multispektral
