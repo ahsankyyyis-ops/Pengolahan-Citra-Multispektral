@@ -3,71 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoMinX - Multi-Band Mineral Analyzer</title>
+    <title>GeoMinX Core - Advanced Raster Processing</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
+            --bg-primary: #090d16;
+            --bg-secondary: #111827;
             --accent: #38bdf8;
-            --accent-hover: #0284c7;
-            --text-main: #f8fafc;
-            --text-muted: #475569;
-            --success: #22c55e;
-            --panel-bg: #ffffff;
+            --success: #10b981;
+            --text-main: #f3f4f6;
+            --border: #1f2937;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { display: flex; height: 100vh; background-color: #f1f5f9; color: #1e293b; overflow: hidden; }
+        body { display: flex; height: 100vh; background-color: #030712; color: var(--text-main); overflow: hidden; }
         
         /* SIDEBAR PANEL KONTROL */
         #sidebar { 
             width: 380px; 
             background: var(--bg-secondary); 
-            color: var(--text-main); 
+            border-right: 1px solid var(--border);
             padding: 25px; 
             display: flex; 
             flex-direction: column; 
             gap: 20px; 
-            box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
-            z-index: 10; 
             overflow-y: auto; 
         }
         
-        .brand h2 { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
-        .brand p { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
-        hr { border: 0; border-top: 1px solid #334155; }
+        .brand h2 { font-size: 1.4rem; font-weight: 700; color: var(--accent); opacity: 0.95; }
+        .brand p { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+        hr { border: 0; border-top: 1px solid var(--border); }
         
         .step-card {
             background: var(--bg-primary);
-            border: 1px solid #334155;
+            border: 1px solid var(--border);
             padding: 16px;
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .step-title { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; }
+        .step-title { font-size: 0.85rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* MULTI-BAND UPLOAD GRID */
+        /* INPUT GRID */
         .band-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .band-box {
-            border: 1px dashed #475569;
-            padding: 12px;
+            border: 1px dashed #374151;
+            padding: 14px 10px;
             border-radius: 6px;
             text-align: center;
-            background: #020617;
+            background: #030712;
             cursor: pointer;
             font-size: 0.75rem;
-            color: #94a3b8;
+            color: #9ca3af;
             transition: all 0.2s;
         }
         .band-box:hover { border-color: var(--accent); color: white; }
-        .band-box.loaded { border-color: var(--success); color: var(--success); background: #052e16; }
+        .band-box.loaded { border-color: var(--success); color: var(--success); background: #064e3b; font-weight: 600; }
         
         select, .btn { 
-            width: 100%; padding: 12px; border-radius: 6px; font-size: 0.
+            width: 100%; padding: 12px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; outline: none; border: none; transition: all 0.2s;
+        }
+        select { background: #030712; color: white; border: 1px solid var(--border); cursor: pointer; }
+        
+        .btn-primary { background: var(--accent); color: #030712; cursor: pointer; }
+        .btn-primary:hover { background: #7dd3fc; }
+        .btn-success { background: var(--success); color: white; display: none; margin-top: 10px; cursor: pointer; text-align: center; text-decoration: none;}
+
+        /* LOADING ANIMATION */
+        #loading-container { display: none; margin-top: 10px; }
+        .progress-bar { width: 100%; height: 4px; background: #1f2937; border-radius: 10px; overflow: hidden; margin-top: 6px; }
+        .progress-fill { width: 0%; height: 100%; background: var(--accent); animation: load 2s linear forwards; }
+        @keyframes load { to { width: 100%; } }
+
+        /* AREA UTAMA (KANAN) */
+        #main-content { flex-grow: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .dashboard-header h1 { font-size: 1.3rem; font-weight: 600; }
+
+        /* ARTIFAK PREVIEW PANEL */
+        .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .display-panel { 
+            background: var(--bg-secondary); 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            padding: 16px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px;
+        }
+        .panel-title { font-size: 0.85rem; font-weight: 600; color: #9ca3af; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        
+        .canvas-container {
+            width: 100%;
+            height: 320px;
+            background: #000;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas, img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .placeholder-text { font-size: 0.8rem; color: #4b5563; text-align: center; padding: 20px; }
+
+        /* PANEL STATISTIK */
+        #analysis-result-panel { display: none; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); padding: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 12px; }
+        .stat-box { background: var(--bg-primary); padding: 15px; border-radius: 6px; border: 1px solid var(--border); text-align: center; }
+        .stat-val { font-size: 1.3rem; font-weight: 700; }
+        .stat-lbl { font-size: 0.7rem; color: #9ca3af; margin-top: 4px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="brand">
+            <h2>GeoMinX Core v2</h2>
+            <p>Raster Image Raster Math Processor</p>
+        </div>
+        <hr>
+        
+        <div class="step-card">
+            <div class="step-title">1. Masukkan File Gambar Band</div>
+            <p style="font-size:0.7rem; color:#6b7280; margin-bottom:4px;">Gunakan gambar biasa (.png/.jpg) untuk mensimulasikan matriks piksel:</p>
+            <div class="band-upload-grid">
+                <div class="band-box" id="b3-box" onclick="triggerUpload('b3')">➕ Band 3 (Green)<input type="file" id="b3" style="display:none;" onchange="loadProcessImage(this, 'b3')"></div>
+                <div class="band-box" id="b4-box" onclick="triggerUpload('b4')">➕ Band 4 (Red)<input type="file" id="b4" style="display:none;" onchange="loadProcessImage(this, 'b4')"></div>
+                <div class="band-box" id="b6-box" onclick="triggerUpload('b6')">➕ Band 6 (SWIR 1)<input type="file" id="b6" style="display:none;" onchange="loadProcessImage(this, 'b6')"></div>
+                <div class="band-box" id="b7-box" onclick="triggerUpload('b7')">➕ Band 7 (SWIR 2)<input type="file" id="b7" style="display:none;" onchange="loadProcessImage(this, 'b7')"></div>
+            </div>
+        </div>
+
+        <div class="step-card">
+            <div class="step-title">2. Pilih Formula Indeks Mineral</div>
+            <select id="formula-select">
+                <option value="clay">Clay Index (Band 6 / Band 7)</option>
+                <option value="iron">Iron Oxide Index (Band 4 / Band 3)</option>
+            </select>
+        </div>
+
+        <div>
+            <button class="btn btn-primary" onclick="prosesMatriksPiksel()">Jalankan Komputasi Citra</button>
+            <div id="loading-container">
+                <div style="font-size: 0.75rem; color: #9ca3af; text-align: center;">Mengekstrak array matriks & kalkulasi indeks...</div>
+                <div class="progress-bar"><div class="progress-fill"></div></div>
+            </div>
+            <button class="btn btn-success" id="btn-download" onclick="alert('File simulasi GeoTIFF berhasil diekspor!')">Ekspor Hasil Matriks (.TIF)</button>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div class="dashboard-header">
+            <h1>Workspace Analisis Spektral Tanpa Peta</h1>
+        </div>
+
+        <div class="workspace-grid">
+            <div class="display-panel">
+                <div class="panel-title">Original Band Preview (Raster Input)</div>
+                <div class="canvas-container">
+                    <div id="placeholder-in" class="placeholder-text">Belum ada file raster diunggah. Silakan klik "Band" di sebelah kiri untuk memasukkan sampel gambar apa saja.</div>
+                    <img id="img-preview" style="display: none;">
+                </div>
+            </div>
+            <div class="display-panel">
+                <div class="panel-title">Processed Mineral Anomaly (Thermal Matrix Output)</div>
+                <div class="canvas-container">
+                    <div id="placeholder-out" class="placeholder-text">Menunggu instruksi kalkulasi matematika saluran...</div>
+                    <canvas id="canvas-matrix-out" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="analysis-result-panel">
+            <div class="panel-title" style="color: var(--accent);">📊 Hasil Analisis Algoritma Spektral</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-ratio" style="color: var(--accent);">-</div>
+                    <div class="stat-lbl">Mean Reflectance</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-anomaly" style="color: #ef4444;">-</div>
+                    <div class="stat-lbl">Estimated Anomalous Area</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-max">-</div>
+                    <div class="stat-lbl">Peak Raster Value</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-val" id="stat-confidence" style="color: var(--success);">-</div>
+                    <div class="stat-lbl">Confidence Level</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedActiveBands = {};
+        let currentImageSrc = null;
+
+        function triggerUpload(id) { document.getElementById(id).click(); }
+
+        // Fungsi membaca data gambar lokal yang diupload pengguna
+        function loadProcessImage(input, bandId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImageSrc = e.target.result;
+                    
+                    // Ganti status tombol upload jadi hijau sukses
+                    const box = document.getElementById(bandId + '-box');
+                    box.classList.add('loaded');
+                    box.innerText = "✅ " + bandId.toUpperCase() + " OK";
+                    
+                    uploadedActiveBands[bandId] = true;
+
+                    // Tampilkan di preview sebelah kiri
+                    document.getElementById('placeholder-in').style.display = 'none';
+                    const imgPre = document.getElementById('img-preview');
+                    imgPre.src = currentImageSrc;
+                    imgPre.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function prosesMatriksPiksel() {
+            const formula = document.getElementById('formula-select').value;
+            const loading = document.getElementById('loading-container');
+            const btnDownload = document.getElementById('btn-download');
+            const resultPanel = document.getElementById('analysis-result-panel');
+
+            // Validasi logika kombinasi band penginderaan jauh
+            if (formula === 'clay' && (!uploadedActiveBands['b6'] || !uploadedActiveBands['b7'])) {
+                alert("Kesalahan Validasi: Indeks Clay memerlukan data Band 6 dan Band 7 sekaligus!");
+                return;
+            }
+            if (formula === 'iron' && (!uploadedActiveBands['b3'] || !uploadedActiveBands['b4'])) {
+                alert("Kesalahan Validasi: Indeks Iron Oxide memerlukan data Band 3 dan Band 4 sekaligus!");
+                return;
+            }
+
+            loading.style.display = "block";
+            btnDownload.style.display = "none";
+            resultPanel.style.display = "none";
+
+            setTimeout(() => {
+                loading.style.display = "none";
+                btnDownload.style.display = "block";
+                resultPanel.style.display = "block";
+
+                // MEMULAI KOMPUTASI RENDERING TERMAL DI CANVAS SISI KANAN
+                document.getElementById('placeholder-out').style.display = 'none';
+                const canvas = document.getElementById('canvas-matrix-out');
+                const ctx = canvas.getContext('2d');
+                const img = document.getElementById('img-preview');
+
+                canvas.width = img.naturalWidth || 300;
+                canvas.height = img.naturalHeight || 300;
+                canvas.style.display = 'block';
+
+                // Gambar aset gambar asli ke canvas kanan
+                ctx.drawImage(img, 0, 0);
+
+                // Ambil data piksel array (RGBA) dari canvas untuk kita manipulasi matematika
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+
+                // Loop setiap piksel gambar untuk mengubah warnanya menjadi pseudo-color rona panas mineral
+                for (let i = 0; i < data.length; i += 4) {
+                    let brightness = (data
