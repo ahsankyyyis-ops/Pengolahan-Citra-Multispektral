@@ -3,56 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OreSight - Deteksi Mineral</title>
+    <title>OreSight - Deteksi Mineral Web</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; }
-        #sidebar { width: 300px; background: #2c3e50; color: white; padding: 20px; box-sizing: border-box; z-index: 1000; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; background-color: #f4f6f9; }
+        
+        /* Sidebar Panel Kontrol */
+        #sidebar { width: 360px; background: #1e293b; color: #f8fafc; padding: 25px; display: flex; flex-direction: column; gap: 20px; box-shadow: 4px 0 10px rgba(0,0,0,0.1); z-index: 1000; overflow-y: auto; }
+        h2 { font-size: 1.5rem; color: #38bdf8; font-weight: 700; margin-bottom: 5px; }
+        .subtitle { font-size: 0.85rem; color: #94a3b8; margin-bottom: 15px; }
+        hr { border: 0; border-top: 1px solid #334155; }
+        
+        label { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 8px; }
+        select, button { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 0.9rem; outline: none; transition: all 0.3s; }
+        select:focus { border-color: #38bdf8; }
+        
+        /* Area Upload File */
+        .upload-container { border: 2px dashed #475569; padding: 20px; border-radius: 8px; text-align: center; background: #0f172a; cursor: pointer; transition: all 0.3s; }
+        .upload-container:hover { border-color: #38bdf8; background: #1e293b; }
+        .upload-container p { font-size: 0.85rem; color: #94a3b8; margin-top: 8px; }
+        #file-input { display: none; }
+        #file-name { font-size: 0.85rem; color: #38bdf8; margin-top: 8px; font-weight: bold; display: none; }
+
+        /* Tombol */
+        button.btn-primary { background: #0284c7; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
+        button.btn-primary:hover { background: #0369a1; }
+        button.btn-secondary { background: #22c55e; color: white; font-weight: bold; border: none; cursor: pointer; display: none; }
+        button.btn-secondary:hover { background: #16a34a; }
+
+        /* Status Loading */
+        #status-loading { display: none; font-size: 0.9rem; color: #e2e8f0; background: #334155; padding: 12px; border-radius: 6px; text-align: center; }
+
+        /* Area Peta */
         #map { flex-grow: 1; height: 100%; }
-        select, button { width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 20px; border-radius: 4px; border: none; }
-        button { background: #27ae60; color: white; font-weight: bold; cursor: pointer; }
-        button:hover { background: #219653; }
     </style>
 </head>
 <body>
 
     <div id="sidebar">
-        <h2>OreSight Web</h2>
-        <hr>
-        <p>1. Pilih Data Satelit:</p>
-        <select id="satelit">
-            <option value="sentinel2">Sentinel-2 (10m)</option>
-            <option value="landsat8">Landsat 8/9 (30m)</option>
-        </select>
+        <div>
+            <h2>OreSight MinTech</h2>
+            <p class="subtitle">Platform Web Deteksi Anomali Mineral</p>
+            <hr>
+        </div>
 
-        <p>2. Pilih Target Mineral:</p>
-        <select id="mineral">
-            <option value="clay">Clay Alteration (Lempung)</option>
-            <option value="iron">Iron Oxide (Besi Oksida)</option>
-        </select>
+        <div>
+            <label>1. Input Citra Satelit (.TIF / .ZIP)</label>
+            <div class="upload-container" onclick="document.getElementById('file-input').click()">
+                <svg width="30" height="30" fill="none" stroke="#38bdf8" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" style="margin:0 auto;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                <p>Klik atau Tarik File Citra ke Sini</p>
+                <div id="file-name"></div>
+            </div>
+            <input type="file" id="file-input" accept=".tif,.tiff,.zip" onchange="handleFileSelect(event)">
+        </div>
 
-        <button onclick="prosesDeteksi()">PROSES CITRA</button>
-        <button style="background:#2980b9;">DOWNLOAD (.TIF)</button>
+        <div>
+            <label for="mineral-select">2. Pilih Mineral Target</label>
+            <select id="mineral-select">
+                <option value="clay">Clay Minerals (Lempung / Al-OH)</option>
+                <option value="iron_oxide">Iron Oxide (Besi Oksida / Hematit-Goethit)</option>
+                <option value="ferrous_iron">Ferrous Iron (Besi Bervalensi 2)</option>
+                <option value="silica">Silica / Quartz High-Content</option>
+            </select>
+        </div>
+
+        <div>
+            <button class="btn-primary" onclick="mulaiIdentifikasi()">MULAI IDENTIFIKASI</button>
+            <div id="status-loading">⏳ Sedang memproses & menghitung indeks spektral...</div>
+            <button class="btn-secondary" id="btn-download" onclick="alert('Mengunduh hasil analisis dalam format GeoTIFF...')">UNDUH HASIL (.TIF)</button>
+        </div>
     </div>
 
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Inisialisasi Peta Indonesia (Koordinat tengah Indonesia)
-        var map = L.map('map').setView([-2.5, 118], 5);
+        // 1. Inisialisasi Peta (Default ke wilayah Indonesia Timur yang kaya mineral)
+        var map = L.map('map').setView([-2.5, 121.5], 6);
 
-        // Menambahkan Base Map (Peta Google/OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
+        // Base map Satelit Google Maps agar relevan dengan geologi
+        L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            attribution: '© Google Satellites'
         }).addTo(map);
 
-        function prosesDeteksi() {
-            var sat = document.getElementById('satelit').value;
-            var min = document.getElementById('mineral').value;
-            alert("Memproses data " + sat + " untuk deteksi " + min + "...\n(Backend Python akan diintegrasikan di tahap berikutnya)");
+        // 2. Fungsi menangani Input File
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const nameDiv = document.getElementById('file-name');
+                nameDiv.innerText = "📁 " + file.name;
+                nameDiv.style.display = "block";
+            }
+        }
+
+        // 3. Simulasi Proses Identifikasi Mineral di Web
+        function mulaiIdentifikasi() {
+            const fileInput = document.getElementById('file-input');
+            const mineral = document.getElementById('mineral-select').value;
+            const loading = document.getElementById('status-loading');
+            const btnDownload = document.getElementById('btn-download');
+
+            if (fileInput.files.length === 0) {
+                alert("Harap masukkan atau upload file citra satelit terlebih dahulu!");
+                return;
+            }
+
+            // Tampilkan animasi loading
+            loading.style.display = "block";
+            btnDownload.style.display = "none";
+
+            // Simulasi waktu komputasi server selama 3 detik
+            setTimeout(() => {
+                loading.style.display = "none";
+                btnDownload.style.display = "block";
+                
+                // Pindahkan fokus peta ke area simulasi tambang/alterasi di Luwuk/Sorowako
+                map.setView([-2.5, 121.3], 12);
+
+                // Simulasi memunculkan layer hasil deteksi mineral berbentuk kotak merah (overlay)
+                // Di masa depan, ini akan berupa gambar asli dari backend Python Anda.
+                var colorResult = (mineral === 'clay') ? '#ff2a00' : '#ffea00';
+                var alertText = (mineral === 'clay') ? 'Clay Alteration' : 'Iron Oxide';
+
+                var mineralLayer = L.rectangle([
+                    [-2.55, 121.25],
+                    [-2.45, 121.35]
+                ], {
+                    color: colorResult, 
+                    weight: 1, 
+                    fillOpacity: 0.5
+                }).addTo(map);
+
+                mineralLayer.bindPopup(`<b>Zona Anomali ${alertText} Terdeteksi!</b>`).openPopup();
+
+                alert("Proses Selesai! Hasil anomali spektral mineral telah ditampilkan di peta (kotak berwarna).");
+
+            }, 3000); 
         }
     </script>
 </body>
-</html> 
+</html>
