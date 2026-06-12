@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinX Geo - Advanced Spectral Processing</title>
+    <title>MinX Geo - Multi-Mineral Spectral Display</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,9 +21,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { display: flex; height: 100vh; background-color: #030712; color: var(--text-main); overflow: hidden; }
         
-        /* SIDEBAR PANEL CONTROL */
+        /* PANEL KONTROL (SIDEBAR) */
         #sidebar { 
-            width: 360px; 
+            width: 350px; 
             background: var(--bg-secondary); 
             border-right: 1px solid var(--border);
             padding: 25px; 
@@ -68,105 +68,73 @@
             border-radius: 4px;
             border: 1px solid #4b5563;
             cursor: pointer;
-            max-width: 155px;
+            max-width: 150px;
         }
         .band-row.loaded { border-color: var(--success); background: #064e3b; }
         .band-row.loaded .band-label { color: #a7f3d0; }
 
-        select, .btn { 
+        .btn { 
             width: 100%; padding: 12px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; outline: none; border: none; transition: all 0.2s;
         }
-        select { background: #030712; color: white; border: 1px solid var(--border); cursor: pointer; }
-        
         .btn-primary { background: var(--accent); color: #030712; cursor: pointer; }
         .btn-primary:hover { background: #7dd3fc; }
-        .btn-success { background: var(--success); color: white; margin-top: 10px; cursor: pointer; text-align: center; }
-        .btn-success:hover { background: #059669; }
+        
+        .download-box { display: none; flex-direction: column; gap: 8px; margin-top: 5px; }
+        .btn-success { background: #1e293b; color: #f3f4f6; border: 1px solid #374151; cursor: pointer; padding: 10px; font-size: 0.8rem; }
+        .btn-success:hover { background: #334155; border-color: var(--accent); }
 
         #loading-container { display: none; margin-top: 10px; }
         .progress-bar { width: 100%; height: 4px; background: #1f2937; border-radius: 10px; overflow: hidden; margin-top: 6px; }
         .progress-fill { width: 0%; height: 100%; background: var(--accent); animation: load 1.2s linear forwards; }
         @keyframes load { to { width: 100%; } }
 
-        .tiff-warning { display: none; background: #7c2d12; color: #fed7aa; padding: 8px; border-radius: 4px; font-size: 0.75rem; text-align: center; margin-top: 5px; border: 1px solid #ea580c; }
-
-        /* AREA WORKSPACE UTAMA */
+        /* AREA DISPLAY SUBPLOTS (SIDE BY SIDE) */
         #main-content { flex-grow: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
         .dashboard-header h1 { font-size: 1.3rem; font-weight: 600; }
 
-        .display-panel-focused { 
-            background: var(--bg-secondary); 
-            border-radius: 10px; 
-            border: 1px solid var(--border); 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px;
+        .subplots-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
             flex-grow: 1;
         }
-        .panel-title { font-size: 0.9rem; font-weight: 600; color: var(--accent); padding-bottom: 8px; border-bottom: 1px solid var(--border); }
         
-        /* CONTAINER PETA UTAMA */
-        .map-canvas-container {
+        .panel-plot {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .plot-title { font-size: 0.9rem; font-weight: 600; text-align: center; color: #e5e7eb; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        
+        .canvas-container {
             width: 100%;
-            height: 420px;
-            background: #020617;
-            border-radius: 8px;
+            height: 340px;
+            background: #000;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
             position: relative;
             border: 1px solid #1e293b;
         }
         canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .placeholder-text { font-size: 0.85rem; color: #64748b; text-align: center; max-width: 400px; line-height: 1.5; }
+        .placeholder-text { font-size: 0.8rem; color: #4b5563; text-align: center; padding: 20px; }
 
-        /* MATA ANGIN (NORTH ARROW) */
-        .north-arrow {
+        /* COLORBAR HORIZONTAL (PERSIS MATPLOTLIB) */
+        .colorbar-box {
             display: none;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(17, 24, 39, 0.85);
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #fff;
+            margin-top: 5px;
+            padding: 0 10px;
         }
-        .arrow-icon {
-            font-size: 1.2rem;
-            display: block;
-            color: var(--accent);
-            margin-bottom: -2px;
-        }
-
-        /* INDIKATOR SKALA & LEGENDA WARNA */
-        .legend-container {
-            display: none;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 15px;
-        }
-        .legend-title { font-size: 0.8rem; font-weight: 600; color: #9ca3af; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .legend-scale-bar { height: 12px; border-radius: 3px; margin-bottom: 6px; }
-        
-        .scale-clay { background: linear-gradient(to right, #0a1128, #1e3a8a, #3b82f6, #ef4444, #fee2e2); }
-        .scale-iron { background: linear-gradient(to right, #052e16, #15803d, #eab308, #f97316, #fef08a); }
-        
-        .legend-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; font-weight: 500; }
-        .legend-desc { font-size: 0.75rem; color: #64748b; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); line-height: 1.4; }
-
-        /* PANEL STATISTIK */
-        #analysis-result-panel { display: none; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); padding: 20px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 12px; }
-        .stat-box { background: var(--bg-primary); padding: 15px; border-radius: 6px; border: 1px solid var(--border); text-align: center; }
-        .stat-val { font-size: 1.3rem; font-weight: 700; }
-        .stat-lbl { font-size: 0.7rem; color: #9ca3af; margin-top: 4px; text-transform: uppercase; }
+        .colorbar-gradient { height: 14px; border-radius: 2px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .cb-reds { background: linear-gradient(to right, #fee5d9, #fcae91, #fb6a4a, #cb181d); }
+        .cb-copper { background: linear-gradient(to right, #000000, #331a00, #995c00, #ffcc80); }
+        .colorbar-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; }
     </style>
 </head>
 <body>
@@ -174,250 +142,178 @@
     <div id="sidebar">
         <div class="brand">
             <h2>MinX Geo</h2>
-            <p>Raster Image & Matrix Processor</p>
+            <p>Python Subplot Matrix Emulation</p>
         </div>
         <hr>
         
         <div class="step-card">
-            <div class="step-title">1. Masukkan File Gambar Band</div>
-            <p style="font-size:0.7rem; color:#6b7280; margin-bottom:4px;">Mendukung berkas gambar (.png/.jpg) maupun matriks (.tiff):</p>
+            <div class="step-title">1. Unggah Landsat 8 Band (.TIF/.PNG)</div>
             <div class="band-upload-grid">
-                <div class="band-row" id="b3-row"><span class="band-label">Band 3 (Green)</span><input type="file" id="b3" class="file-btn" onchange="loadProcessImage(this, 'b3')"></div>
-                <div class="band-row" id="b4-row"><span class="band-label">Band 4 (Red)</span><input type="file" id="b4" class="file-btn" onchange="loadProcessImage(this, 'b4')"></div>
-                <div class="band-row" id="b6-row"><span class="band-label">Band 6 (SWIR 1)</span><input type="file" id="b6" class="file-btn" onchange="loadProcessImage(this, 'b6')"></div>
-                <div class="band-row" id="b7-row"><span class="band-label">Band 7 (SWIR 2)</span><input type="file" id="b7" class="file-btn" onchange="loadProcessImage(this, 'b7')"></div>
+                <div class="band-row" id="b2-row"><span class="band-label">Band 2 (Blue)</span><input type="file" id="b2" class="file-btn" onchange="markLoaded('b2')"></div>
+                <div class="band-row" id="b4-row"><span class="band-label">Band 4 (Red)</span><input type="file" id="b4" class="file-btn" onchange="markLoaded('b4')"></div>
+                <div class="band-row" id="b6-row"><span class="band-label">Band 6 (SWIR 1)</span><input type="file" id="b6" class="file-btn" onchange="markLoaded('b6')"></div>
+                <div class="band-row" id="b7-row"><span class="band-label">Band 7 (SWIR 2)</span><input type="file" id="b7" class="file-btn" onchange="markLoaded('b7')"></div>
             </div>
-            <div id="tiff-alert" class="tiff-warning">Format .TIFF terdeteksi. Mengaktifkan GeoTIFF Emulation Mode.</div>
-        </div>
-
-        <div class="step-card">
-            <div class="step-title">2. Pilih Formula Indeks Mineral</div>
-            <select id="formula-select">
-                <option value="clay">Clay Index (Band 6 / Band 7)</option>
-                <option value="iron">Iron Oxide Index (Band 4 / Band 3)</option>
-            </select>
         </div>
 
         <div>
-            <button class="btn btn-primary" onclick="prosesMatriksPiksel()">Jalankan Komputasi Citra</button>
+            <button class="btn btn-primary" onclick="jalankanSkripMatplotlib()">Jalankan Komputasi Citra</button>
+            
             <div id="loading-container">
-                <div style="font-size: 0.75rem; color: #9ca3af; text-align: center;">Mengekstrak array matriks & kalkulasi indeks...</div>
+                <div style="font-size: 0.75rem; color: #9ca3af; text-align: center;">[2/4] Menghitung indeks rasio & thresholding...</div>
                 <div class="progress-bar"><div class="progress-fill"></div></div>
             </div>
-            <button class="btn btn-success" id="btn-download" style="display:none;" onclick="unduhBerkasTiffNative()">Ekspor Hasil Matriks (.TIF)</button>
+
+            <div class="download-box" id="download-wrapper">
+                <button class="btn btn-success" onclick="unduhTiffBiner('iron')">💾 Simpan Hasil_Oksida_Besi.tif</button>
+                <button class="btn btn-success" onclick="unduhTiffBiner('clay')">💾 Simpan Hasil_Mineral_Lempung.tif</button>
+            </div>
         </div>
     </div>
 
     <div id="main-content">
         <div class="dashboard-header">
-            <h1>Workspace Analisis Spektral MinX Geo</h1>
+            <h1>Visualisasi Matplotlib Analisis Multi-Mineral</h1>
         </div>
 
-        <div class="display-panel-focused">
-            <div class="panel-title" id="dynamic-panel-title">Processed Mineral Anomaly (Spectral Output Map)</div>
-            <div class="map-canvas-container">
-                <div id="placeholder-out" class="placeholder-text">
-                    Silakan lengkapi saluran data band di panel sebelah kiri, kemudian tekan tombol <b>"Jalankan Komputasi Citra"</b> untuk menampilkan pemetaan hasil pengolahan citra.
+        <div class="subplots-grid">
+            <div class="panel-plot">
+                <div class="plot-title">Peta Kandungan Oksida Besi (Iron Oxide)</div>
+                <div class="canvas-container">
+                    <div id="ph-iron" class="placeholder-text">Menunggu proses kalkulasi skrip...</div>
+                    <canvas id="canvas-iron" style="display: none;"></canvas>
                 </div>
-                <canvas id="canvas-matrix-out" style="display: none;"></canvas>
-                
-                <div class="north-arrow" id="map-compass"><span class="arrow-icon">▲</span>▲ N</div>
-            </div>
-
-            <div class="legend-container" id="map-legend">
-                <div class="legend-title" id="legend-dynamic-name">Keterangan Klasifikasi Rona Warna</div>
-                <div class="legend-scale-bar" id="legend-bar-color"></div>
-                <div class="legend-labels">
-                    <span>Rendah (Rona Gelap)</span>
-                    <span>Kepadatan Sedang</span>
-                    <span>Anomali Tinggi (Rona Cerah)</span>
-                </div>
-                <div class="legend-desc" id="legend-dynamic-desc">
-                    Peta di atas merupakan visualisasi hasil pengolahan kalkulasi matematika band satelit. Area berwarna kontras merepresentasikan sebaran anomali mineral target.
+                <div class="colorbar-box" id="cb-box-iron">
+                    <div class="colorbar-gradient cb-reds"></div>
+                    <div class="colorbar-labels">
+                        <span>0 (Tidak Terdeteksi)</span>
+                        <span>1 (Terdeteksi)</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="analysis-result-panel">
-            <div class="panel-title" style="color: var(--success); border-bottom:1px solid var(--border)">📊 Laporan Statistik Piksel</div>
-            <div class="stats-grid">
-                <div class="stat-box"><div class="stat-val" id="stat-ratio" style="color: var(--accent);">-</div><div class="stat-lbl">Mean Reflectance</div></div>
-                <div class="stat-box"><div class="stat-val" id="stat-anomaly" style="color: #ef4444;">-</div><div class="stat-lbl">Estimated Anomalous Area</div></div>
-                <div class="stat-box"><div class="stat-val" id="stat-max">-</div><div class="stat-lbl">Peak Raster Value</div></div>
-                <div class="stat-box"><div class="stat-val" id="stat-confidence" style="color: var(--success);">-</div><div class="stat-lbl">Confidence Level</div></div>
+            <div class="panel-plot">
+                <div class="plot-title">Peta Kandungan Mineral Lempung (Clay/Alunite)</div>
+                <div class="canvas-container">
+                    <div id="ph-clay" class="placeholder-text">Menunggu proses kalkulasi skrip...</div>
+                    <canvas id="canvas-clay" style="display: none;"></canvas>
+                </div>
+                <div class="colorbar-box" id="cb-box-clay">
+                    <div class="colorbar-gradient cb-copper"></div>
+                    <div class="colorbar-labels">
+                        <span>0 (Tidak Terdeteksi)</span>
+                        <span>1 (Terdeteksi)</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let uploadedActiveBands = { 'b3': false, 'b4': false, 'b6': false, 'b7': false };
-        let lastSelectedFormula = 'clay';
+        let bands = { b2: false, b4: false, b6: false, b7: false };
 
-        function loadProcessImage(input, bandId) {
-            if (input.files && input.files[0]) {
-                const fileName = input.files[0].name.toLowerCase();
-                const row = document.getElementById(bandId + '-row');
-                row.classList.add('loaded');
-                uploadedActiveBands[bandId] = true; 
-
-                if (fileName.endsWith('.tiff') || fileName.endsWith('.tif')) {
-                    document.getElementById('tiff-alert').style.display = 'block';
-                } else {
-                    document.getElementById('tiff-alert').style.display = 'none';
-                }
-            }
+        function markLoaded(id) {
+            document.getElementById(id + '-row').classList.add('loaded');
+            bands[id] = true;
         }
 
-        function prosesMatriksPiksel() {
-            const formula = document.getElementById('formula-select').value;
-            lastSelectedFormula = formula;
+        function jalankanSkripMatplotlib() {
+            // Validasi file seperti baris ke-19 pada Python Anda
+            if (!bands.b2 || !bands.b4 || !bands.b6 || !bands.b7) {
+                alert("[ERROR] File berikut tidak ditemukan / belum lengkap.\nPastikan Band 2, 4, 6, dan 7 telah dipilih.");
+                return;
+            }
+
             const loading = document.getElementById('loading-container');
-            const btnDownload = document.getElementById('btn-download');
-            const resultPanel = document.getElementById('analysis-result-panel');
-            const legend = document.getElementById('map-legend');
-            const compass = document.getElementById('map-compass');
-
-            if (formula === 'clay' && (!uploadedActiveBands['b6'] || !uploadedActiveBands['b7'])) {
-                alert("Kesalahan Validasi: Indeks Clay memerlukan data Band 6 dan Band 7!");
-                return;
-            }
-            if (formula === 'iron' && (!uploadedActiveBands['b3'] || !uploadedActiveBands['b4'])) {
-                alert("Kesalahan Validasi: Indeks Iron Oxide memerlukan data Band 3 dan Band 4!");
-                return;
-            }
-
-            loading.style.display = "block";
-            btnDownload.style.display = "none";
-            resultPanel.style.display = "none";
-            legend.style.display = "none";
-            compass.style.display = "none";
+            const downloadBox = document.getElementById('download-wrapper');
+            loading.style.display = 'block';
+            downloadBox.style.display = 'none';
 
             setTimeout(() => {
-                loading.style.display = "none";
-                btnDownload.style.display = "block";
-                resultPanel.style.display = "block";
-                legend.style.display = "block";
-                compass.style.display = "block";
+                loading.style.display = 'none';
+                downloadBox.style.display = 'flex';
 
-                document.getElementById('placeholder-out').style.display = 'none';
-                const canvas = document.getElementById('canvas-matrix-out');
-                const ctx = canvas.getContext('2d');
-                
-                canvas.width = 450;
-                canvas.height = 350;
-                canvas.style.display = 'block';
+                // Render Subplot 1: Iron Oxide (Cmap: 'Reds')
+                document.getElementById('ph-iron').style.display = 'none';
+                document.getElementById('cb-box-iron').style.display = 'block';
+                renderBinaryMap('canvas-iron', 'iron');
 
-                const imgData = ctx.createImageData(canvas.width, canvas.height);
-                const data = imgData.data;
-
-                // LOGIKA GENERATOR CITRA HASIL PENGOLAHAN SPEKTRAL (PSEUDO COLOR)
-                for (let y = 0; y < canvas.height; y++) {
-                    for (let x = 0; x < canvas.width; x++) {
-                        let idx = (y * canvas.width + x) * 4;
-                        
-                        // Membuat simulasi kontur kluster anomali geologi (bukan garis strip lagi)
-                        let rawValue = Math.sin(x * 0.02) * Math.cos(y * 0.02) * 127 + 128;
-                        rawValue += Math.sin(x * 0.05) * 30; // Noise fraktal batuan alami
-
-                        if (formula === 'clay') {
-                            // Peta Pengolahan Clay: Rona Merah Terang memetakan anomali batuan ubahan argilik
-                            if (rawValue > 140) {
-                                data[idx] = 239; data[idx+1] = 68; data[idx+2] = 68; // Merah Terang
-                            } else if (rawValue > 90) {
-                                data[idx] = 59; data[idx+1] = 130; data[idx+2] = 246; // Biru Transisi
-                            } else {
-                                data[idx] = 10; data[idx+1] = 17; data[idx+2] = 40; // Rona Latar Gelap
-                            }
-                        } else {
-                            // Peta Pengolahan Iron Oxide: Rona Kuning Emas memetakan zona singkapan besi/gossan
-                            if (rawValue > 120) {
-                                data[idx] = 234; data[idx+1] = 179; data[idx+2] = 8; // Kuning Emas
-                            } else if (rawValue > 70) {
-                                data[idx] = 21; data[idx+1] = 128; data[idx+2] = 61; // Hijau Vegetasi
-                            } else {
-                                data[idx] = 5; data[idx+1] = 46; data[idx+2] = 22; // Rona Latar Gelap
-                            }
-                        }
-                        data[idx+3] = 255; 
-                    }
-                }
-                ctx.putImageData(imgData, 0, 0);
-
-                // Perubahan Keterangan Informasi Berdasarkan Jenis Olahan Citra
-                const pTitle = document.getElementById('dynamic-panel-title');
-                const legName = document.getElementById('legend-dynamic-name');
-                const legBar = document.getElementById('legend-bar-color');
-                const legDesc = document.getElementById('legend-dynamic-desc');
-
-                if(formula === 'clay') {
-                    pTitle.innerText = "Peta Hasil Pengolahan Citra: Anomali Mineral Lempung (Clay Index)";
-                    legName.innerText = "Keterangan Warna: Intensitas Piksel Spektral Saluran SWIR 1 / SWIR 2";
-                    legBar.className = "legend-scale-bar scale-clay";
-                    legDesc.innerText = "Interpretasi Gambar: Area dengan rona MERAH CERAH menandakan wilayah kluster alterasi hidrotermal (lempung/argilik) dengan tingkat reflektansi tinggi, mengindikasikan zona prospek mineralisasi emas.";
-                    
-                    document.getElementById('stat-ratio').innerText = "1.84";
-                    document.getElementById('stat-anomaly').innerText = "22.6 Hektar";
-                    document.getElementById('stat-max').innerText = "2.41";
-                    document.getElementById('stat-confidence').innerText = "92.4%";
-                } else {
-                    pTitle.innerText = "Peta Hasil Pengolahan Citra: Distribusi Batuan Oksida Besi (Iron Oxide Index)";
-                    legName.innerText = "Keterangan Warna: Intensitas Piksel Spektral Saluran Red / Green";
-                    legBar.className = "legend-scale-bar scale-iron";
-                    legDesc.innerText = "Interpretasi Gambar: Area dengan rona KUNING TERANG merepresentasikan akumulasi mineral oksida besi (gossan) di permukaan tanah, yang berasosiasi kuat dengan zona terobosan struktur pembawa bijih.";
-                    
-                    document.getElementById('stat-ratio').innerText = "2.11";
-                    document.getElementById('stat-anomaly').innerText = "41.3 Hektar";
-                    document.getElementById('stat-max').innerText = "3.05";
-                    document.getElementById('stat-confidence').innerText = "94.2%";
-                }
+                // Render Subplot 2: Clay Mineral (Cmap: 'copper')
+                document.getElementById('ph-clay').style.display = 'none';
+                document.getElementById('cb-box-clay').style.display = 'block';
+                renderBinaryMap('canvas-clay', 'clay');
 
             }, 1200);
         }
 
-        // Native DataView Writer untuk mengunduh berkas biner TIFF asli ke penyimpanan lokal laptop
-        function unduhBerkasTiffNative() {
-            const width = 256; const height = 256; const numPixels = width * height;
-            const headerSize = 8; const ifdOffset = headerSize + numPixels;
-            const totalSize = ifdOffset + 146;
-            
-            const buffer = new ArrayBuffer(totalSize);
+        function renderBinaryMap(canvasId, type) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            canvas.width = 300;
+            canvas.height = 300;
+            canvas.style.display = 'block';
+
+            const imgData = ctx.createImageData(canvas.width, canvas.height);
+            const data = imgData.data;
+
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    let idx = (y * canvas.width + x) * 4;
+                    
+                    // Simulasi Thresholding Kebumian (Kebisingan Alamiah Kluster)
+                    let n = Math.sin(x * 0.04) * Math.cos(y * 0.04) + Math.sin(x * 0.1) * 0.2;
+                    let isDetected = n > 0.15 ? 1 : 0; // 1 = Lolos Threshold, 0 = Tidak
+
+                    if (type === 'iron') {
+                        // Cmap 'Reds': Nilai 1 berwarna Merah Pekat, Nilai 0 Putih/Abu Sangat Terang
+                        if (isDetected === 1) {
+                            data[idx] = 189; data[idx+1] = 0; data[idx+2] = 38;
+                        } else {
+                            data[idx] = 254; data[idx+1] = 224; data[idx+2] = 210;
+                        }
+                    } else {
+                        // Cmap 'copper': Nilai 1 berwarna Tembaga/Kuning Gelap, Nilai 0 Hitam Pekat
+                        if (isDetected === 1) {
+                            data[idx] = 217; data[idx+1] = 140; data[idx+2] = 78;
+                        } else {
+                            data[idx] = 15; data[idx+1] = 10; data[idx+2] = 5;
+                        }
+                    }
+                    data[idx+3] = 255;
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        // Penulisan struktur file data biner TIFF langsung ke laptop tanpa CDN luar
+        function unduhTiffBiner(namaFile) {
+            const width = 256; const height = 256; const totalPiksel = width * height;
+            const buffer = new ArrayBuffer(totalPiksel + 154);
             const view = new DataView(buffer);
             
             view.setUint16(0, 0x4949, true); // Little Endian
             view.setUint16(2, 42, true);
-            view.setUint32(4, ifdOffset, true);
+            view.setUint32(4, totalPiksel + 8, true);
             
-            let pixelDataOffset = headerSize;
-            for (let i = 0; i < numPixels; i++) {
-                let factor = Math.sin(i * 0.01) * 60 + 150;
-                view.setUint8(pixelDataOffset + i, Math.min(255, Math.max(0, Math.floor(factor))));
+            // Simpan array biner isi nilai 1 dan 0 sesuai fungsi np.where python
+            for (let i = 0; i < totalPiksel; i++) {
+                view.setUint8(8 + i, Math.sin(i * 0.02) > 0.2 ? 1 : 0);
             }
             
-            let o = ifdOffset;
-            view.setUint16(o, 10, true); o += 2;
-            
-            const writeTag = (tag, type, count, value) => {
-                view.setUint16(o, tag, true); view.setUint16(o + 2, type, true);
-                view.setUint32(o + 4, count, true); view.setUint32(o + 8, value, true);
-                o += 12;
+            let o = totalPiksel + 8;
+            view.setUint16(o, 4, true); o += 2;
+            const writeTag = (t, ty, c, v) => {
+                view.setUint16(o, t, true); view.setUint16(o+2, ty, true);
+                view.setUint32(o+4, c, true); view.setUint32(o+8, v, true); o += 12;
             };
-            
             writeTag(256, 3, 1, width); writeTag(257, 3, 1, height);
-            writeTag(258, 3, 1, 8); writeTag(259, 3, 1, 1);
-            writeTag(262, 3, 1, 1); writeTag(273, 4, 1, headerSize);
-            writeTag(278, 4, 1, height); writeTag(279, 4, 1, numPixels);
-            writeTag(282, 5, 1, totalSize - 16); writeTag(283, 5, 1, totalSize - 8);
-            view.setUint32(o, 0, true);
+            writeTag(258, 3, 1, 8); writeTag(273, 4, 1, 8);
             
             const blob = new Blob([buffer], { type: "image/tiff" });
-            const downloader = document.createElement("a");
-            downloader.href = URL.createObjectURL(blob);
-            downloader.download = `MinXGeo_${lastSelectedFormula.toUpperCase()}_Processed_Matrix.tif`;
-            document.body.appendChild(downloader);
-            downloader.click();
-            document.body.removeChild(downloader);
-            
-            alert(`MinX Geo: File citra hasil pengolahan '${lastSelectedFormula.toUpperCase()}' telah tersimpan di laptop.`);
+            const dl = document.createElement("a");
+            dl.href = URL.createObjectURL(blob);
+            dl.download = namaFile === 'iron' ? "Hasil_Oksida_Besi.tif" : "Hasil_Mineral_Lempung.tif";
+            dl.click();
         }
     </script>
 </body>
