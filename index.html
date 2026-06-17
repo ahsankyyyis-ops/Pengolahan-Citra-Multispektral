@@ -1,380 +1,565 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoMinX - Multi-Band Mineral Detection</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-primary: #090d16;
-            --bg-secondary: #111827;
-            --accent: #38bdf8;
-            --success: #10b981;
-            --text-main: #f3f4f6;
-            --border: #1f2937;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MinX Geo — Multi-Mineral Spectral Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.1/dist-browser/geotiff.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1a1a2e;--bg-panel:#16213e;--bg-card:#0f3460;--bg-input:#0a0a1a;
+  --border:#2a3a5c;--border-h:#3d5a8a;--accent:#4a90d9;
+  --success:#2ecc71;--success-dim:#1a4a30;
+  --t1:#e8eaf6;--t2:#9aa5c4;--t3:#4a5e80;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+html,body{height:100%;}
+body{font-family:var(--sans);background:var(--bg);color:var(--t1);display:flex;overflow:hidden;}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { display: flex; height: 100vh; background-color: #030712; color: var(--text-main); overflow: hidden; }
-        
-        /* SIDEBAR PANEL CONTROL */
-        #sidebar { 
-            width: 350px; 
-            background: var(--bg-secondary); 
-            border-right: 1px solid var(--border);
-            padding: 25px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            overflow-y: auto; 
-        }
-        
-        .brand h2 { font-size: 1.4rem; font-weight: 700; color: var(--accent); opacity: 0.95; }
-        .brand p { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
-        hr { border: 0; border-top: 1px solid var(--border); }
-        
-        .step-card {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            padding: 16px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+#sidebar{
+  width:290px;min-width:290px;background:var(--bg-panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:18px 15px;gap:15px;overflow-y:auto;
+}
+.brand{padding-bottom:13px;border-bottom:1px solid var(--border);}
+.brand-name{font-size:16px;font-weight:600;}
+.brand-sub{font-size:10px;color:var(--t3);font-family:var(--mono);margin-top:2px;}
+.sect{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.band-list{display:flex;flex-direction:column;gap:4px;}
+.band-item{
+  position:relative;display:flex;align-items:center;gap:9px;
+  padding:8px 11px;border:1px solid var(--border);border-radius:7px;
+  background:var(--bg-input);cursor:pointer;transition:border-color .15s;
+}
+.band-item:hover{border-color:var(--border-h);}
+.band-item.loaded{border-color:var(--success);background:var(--success-dim);}
+.bb{font-family:var(--mono);font-size:10px;font-weight:500;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--t2);}
+.band-item.loaded .bb{background:rgba(46,204,113,.2);color:#7debb0;}
+.bi{flex:1;}.bn{font-size:11px;color:var(--t2);}.bw{font-size:10px;font-family:var(--mono);color:var(--t3);}
+.band-item.loaded .bn{color:#a0f0c0;}
+.bico{width:13px;height:13px;color:var(--t3);flex-shrink:0;}
+.band-item.loaded .bico{color:var(--success);}
+.band-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.tg{display:flex;flex-direction:column;gap:9px;}
+.ti{display:flex;flex-direction:column;gap:5px;}
+.th{display:flex;justify-content:space-between;}
+.tl{font-size:11px;color:var(--t2);}
+.tv{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t1);}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--border);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg-panel);}
+.sl{font-family:var(--mono);font-size:10px;color:var(--t3);min-height:14px;}
+.pw{height:2px;background:var(--border);border-radius:2px;overflow:hidden;display:none;}
+.pb{height:100%;width:0;background:var(--accent);transition:width .3s ease;}
+.pw.active{display:block;}
+.run-btn{
+  width:100%;padding:10px;font-size:12px;font-weight:500;
+  border:1px solid var(--border-h);border-radius:7px;
+  background:var(--bg-card);color:var(--t1);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:border-color .15s,background .15s;
+}
+.run-btn:hover{border-color:var(--accent);background:#1a3060;}
+.dl-row{display:flex;flex-direction:column;gap:4px;}
+.dl-btn{
+  display:flex;align-items:center;gap:7px;padding:7px 11px;width:100%;
+  font-size:10px;font-family:var(--mono);
+  border:1px solid var(--border);border-radius:6px;
+  background:var(--bg-input);color:var(--t3);cursor:pointer;
+  opacity:0;pointer-events:none;transition:opacity .3s,border-color .15s;
+}
+.dl-btn.visible{opacity:1;pointer-events:auto;}
+.dl-btn:hover{border-color:var(--border-h);color:var(--t2);}
 
-        .step-title { font-size: 0.85rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        .band-upload-grid { display: flex; flex-direction: column; gap: 10px; }
-        .band-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #030712;
-            border: 1px solid #374151;
-            padding: 8px 12px;
-            border-radius: 6px;
-        }
-        .band-label { font-size: 0.8rem; font-weight: 600; color: #9ca3af; }
-        .file-btn {
-            font-size: 0.75rem;
-            color: #fff;
-            background: #1f2937;
-            padding: 6px 10px;
-            border-radius: 4px;
-            border: 1px solid #4b5563;
-            cursor: pointer;
-            max-width: 150px;
-        }
-        .band-row.loaded { border-color: var(--success); background: #064e3b; }
-        .band-row.loaded .band-label { color: #a7f3d0; }
+#main{flex:1;min-width:0;padding:18px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.mh{display:flex;align-items:baseline;gap:10px;}
+.mt{font-size:14px;font-weight:600;}
+.mm{font-family:var(--mono);font-size:10px;color:var(--t3);}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;}
 
-        .btn { 
-            width: 100%; padding: 12px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; outline: none; border: none; transition: all 0.2s;
-        }
-        .btn-primary { background: var(--accent); color: #030712; cursor: pointer; }
-        .btn-primary:hover { background: #7dd3fc; }
-        
-        .download-box { display: none; flex-direction: column; gap: 8px; margin-top: 5px; }
-        .btn-success { background: #1e293b; color: #f3f4f6; border: 1px solid #374151; cursor: pointer; padding: 10px; font-size: 0.8rem; text-align: center; }
-        .btn-success:hover { background: #334155; border-color: var(--accent); }
+/* ── MATPLOTLIB-FAITHFUL FIGURE ── */
+.mpl-fig{
+  display:flex;flex-direction:column;gap:0;
+  padding:12px 14px 10px;border-radius:10px;
+  border:1px solid var(--border);
+}
+.mpl-fig.iron-fig{background:#f0ebe5;}
+.mpl-fig.clay-fig{background:#111;border-color:#333;}
+.mpl-ttl{
+  text-align:center;font-size:11px;font-weight:600;
+  font-family:'DejaVu Sans',Arial,sans-serif;margin-bottom:7px;
+}
+.iron-fig .mpl-ttl{color:#111;}
+.clay-fig .mpl-ttl{color:#ccc;}
+.ax-row{display:flex;gap:0;align-items:flex-start;}
+.ytk{
+  display:flex;flex-direction:column;justify-content:space-between;
+  min-width:36px;padding:0 4px 0 0;align-items:flex-end;
+  font-size:8.5px;font-family:var(--mono);
+}
+.iron-fig .ytk{color:#444;}
+.clay-fig .ytk{color:#777;}
+.ax-col{display:flex;flex-direction:column;flex:1;min-width:0;}
+.cwrap{
+  width:100%;aspect-ratio:1;border:1px solid;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.iron-fig .cwrap{background:#fff5f0;border-color:#888;}
+.clay-fig .cwrap{background:#000;border-color:#555;}
+.cwrap canvas{display:none;width:100%;height:100%;image-rendering:pixelated;}
+.ph{font-size:10px;text-align:center;font-family:var(--mono);line-height:2;}
+.iron-fig .ph{color:#aaa;}
+.clay-fig .ph{color:#555;}
+.xtk{
+  display:flex;justify-content:space-between;
+  padding:3px 0 0;font-size:8.5px;font-family:var(--mono);
+}
+.iron-fig .xtk{color:#444;}
+.clay-fig .xtk{color:#777;}
+.cb-sec{margin-top:7px;padding:0 2px;}
+.cb-track{height:11px;border:1px solid;border-radius:1px;margin-bottom:3px;}
+.iron-fig .cb-track{border-color:#999;}
+.clay-fig .cb-track{border-color:#555;}
+.cb-reds{background:linear-gradient(to right,#fff5f0,#fee0d2,#fcbba1,#fc9272,#fb6a4a,#ef3b2c,#cb181d,#99000d);}
+.cb-copper{background:linear-gradient(to right,#000,#1a0a00,#4d2000,#8c3a00,#c96000,#e08000,#f5a030,#ffc878);}
+.cb-tks{display:flex;justify-content:space-between;font-size:8.5px;font-family:var(--mono);}
+.iron-fig .cb-tks{color:#444;}
+.clay-fig .cb-tks{color:#777;}
+.cb-lbl{text-align:center;font-size:9px;margin-top:2px;font-family:'DejaVu Sans',Arial,sans-serif;}
+.iron-fig .cb-lbl{color:#333;}
+.clay-fig .cb-lbl{color:#aaa;}
 
-        #loading-container { display: none; margin-top: 10px; }
-        .progress-text { font-size: 0.75rem; color: #38bdf8; text-align: center; font-weight: 500; }
-        .progress-bar { width: 100%; height: 4px; background: #1f2937; border-radius: 10px; overflow: hidden; margin-top: 6px; }
-        .progress-fill { width: 0%; height: 100%; background: var(--accent); animation: load 1.5s linear forwards; }
-        @keyframes load { to { width: 100%; } }
-
-        /* AREA WORKSPACE UTAMA (SIDE-BY-SIDE PLOT) */
-        #main-content { flex-grow: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
-        .dashboard-header h1 { font-size: 1.3rem; font-weight: 600; }
-
-        .subplots-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 20px; 
-            flex-grow: 1;
-        }
-        
-        .panel-plot {
-            background: var(--bg-secondary);
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .plot-title { font-size: 0.9rem; font-weight: 600; text-align: center; color: #e5e7eb; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        
-        .canvas-container {
-            width: 100%;
-            height: 360px;
-            background: #000;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            border: 1px solid #1e293b;
-        }
-        canvas { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
-        .placeholder-text { font-size: 0.8rem; color: #4b5563; text-align: center; padding: 20px; }
-
-        /* COLORBAR HORIZONTAL (GAYA MATPLOTLIB) */
-        .colorbar-box {
-            display: none;
-            margin-top: 5px;
-            padding: 0 10px;
-        }
-        .colorbar-gradient { height: 14px; border-radius: 2px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.1); }
-        .cb-reds { background: linear-gradient(to right, #fee5d9, #fcae91, #fb6a4a, #cb181d); }
-        .cb-copper { background: linear-gradient(to right, #000000, #331a00, #995c00, #ffcc80); }
-        .colorbar-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; }
-    </style>
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:7px;}
+.sc{background:var(--bg-input);border:1px solid var(--border);border-radius:5px;padding:6px 8px;}
+.sv{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--t1);}
+.sk{font-size:10px;color:var(--t3);margin-top:1px;}
+</style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div class="brand">
-            <h2>GeoMinX</h2>
-            <p>Multi-Band Mineral Processor</p>
-        </div>
-        <hr>
-        
-        <div class="step-card">
-            <div class="step-title">1. Masukkan File Gambar Band</div>
-            <div class="band-upload-grid">
-                <div class="band-row" id="b2-row"><span class="band-label">Band 2 (Blue)</span><input type="file" id="b2" class="file-btn" onchange="bacaFileBand(this, 'b2')"></div>
-                <div class="band-row" id="b4-row"><span class="band-label">Band 4 (Red)</span><input type="file" id="b4" class="file-btn" onchange="bacaFileBand(this, 'b4')"></div>
-                <div class="band-row" id="b6-row"><span class="band-label">Band 6 (SWIR 1)</span><input type="file" id="b6" class="file-btn" onchange="bacaFileBand(this, 'b6')"></div>
-                <div class="band-row" id="b7-row"><span class="band-label">Band 7 (SWIR 2)</span><input type="file" id="b7" class="file-btn" onchange="bacaFileBand(this, 'b7')"></div>
-            </div>
-        </div>
+<div id="sidebar">
+  <div class="brand">
+    <div class="brand-name">MinX Geo</div>
+    <div class="brand-sub">Multi-Mineral Spectral Analysis v2.0</div>
+  </div>
 
-        <div>
-            <button class="btn btn-primary" onclick="prosesLogikaNumpyWeb()">Jalankan Komputasi Citra</button>
-            
-            <div id="loading-container">
-                <div class="progress-text" id="status-tahapan">[1/4] Membaca data piksel...</div>
-                <div class="progress-bar"><div class="progress-fill"></div></div>
-            </div>
+  <div>
+    <div class="sect">Landsat 8 Band Input</div>
+    <div class="band-list">
+      <div class="band-item" id="b2-item">
+        <span class="bb">B2</span>
+        <div class="bi"><div class="bn">Blue</div><div class="bw">0.45–0.51 µm</div></div>
+        <svg class="bico" id="b2-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+        <input type="file" class="band-file-input" accept=".tif,.tiff,.png,.jpg" onchange="handleBandUpload('b2', this)">
+      </div>
+      <div class="band-item" id="b4-item">
+        <span class="bb">B4</span>
+        <div class="bi"><div class="bn">Red</div><div class="bw">0.64–0.67 µm</div></div>
+        <svg class="bico" id="b4-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+        <input type="file" class="band-file-input" accept=".tif,.tiff,.png,.jpg" onchange="handleBandUpload('b4', this)">
+      </div>
+      <div class="band-item" id="b6-item">
+        <span class="bb">B6</span>
+        <div class="bi"><div class="bn">SWIR-1</div><div class="bw">1.57–1.65 µm</div></div>
+        <svg class="bico" id="b6-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+        <input type="file" class="band-file-input" accept=".tif,.tiff,.png,.jpg" onchange="handleBandUpload('b6', this)">
+      </div>
+      <div class="band-item" id="b7-item">
+        <span class="bb">B7</span>
+        <div class="bi"><div class="bn">SWIR-2</div><div class="bw">2.11–2.29 µm</div></div>
+        <svg class="bico" id="b7-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+        <input type="file" class="band-file-input" accept=".tif,.tiff,.png,.jpg" onchange="handleBandUpload('b7', this)">
+      </div>
+    </div>
+  </div>
 
-            <div class="download-box" id="download-wrapper">
-                <button class="btn btn-success" onclick="unduhTiffBinerMurni('iron')">💾 Simpan Hasil_Oksida_Besi.tif</button>
-                <button class="btn btn-success" onclick="unduhTiffBinerMurni('clay')">💾 Simpan Hasil_Mineral_Lempung.tif</button>
+  <div>
+    <div class="sect">Threshold Parameters</div>
+    <div class="tg">
+      <div class="ti">
+        <div class="th"><span class="tl">Iron Oxide — B4/B2</span><span class="tv" id="tv-iron">1.40</span></div>
+        <input type="range" min="0.1" max="3.0" step="0.05" value="1.40" oninput="updateThresh('iron',this.value)">
+      </div>
+      <div class="ti">
+        <div class="th"><span class="tl">Clay / Alunite — B6/B7</span><span class="tv" id="tv-clay">1.50</span></div>
+        <input type="range" min="0.1" max="3.0" step="0.05" value="1.50" oninput="updateThresh('clay',this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="sl" id="sl">Menunggu input band...</div>
+  <div class="pw" id="pw"><div class="pb" id="pb"></div></div>
+
+  <button class="run-btn" id="run-btn" onclick="runAnalysis()" disabled style="opacity:0.5; pointer-events:none;">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><circle cx="8" cy="8" r="6"/><path d="M6 5.5l5 2.5-5 2.5V5.5z" fill="currentColor" stroke="none"/></svg>
+    Jalankan Komputasi Citra
+  </button>
+
+  <div class="dl-row">
+    <button class="dl-btn" id="dl-iron" onclick="downloadTiff('iron')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+      Hasil_Oksida_Besi.tif
+    </button>
+    <button class="dl-btn" id="dl-clay" onclick="downloadTiff('clay')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+      Hasil_Mineral_Lempung.tif
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="mh">
+    <span class="mt">Visualisasi Analisis Multi-Mineral</span>
+    <span class="mm">fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))</span>
+  </div>
+
+  <div class="pg">
+    <!-- IRON -->
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <div class="mpl-fig iron-fig">
+        <div class="mpl-ttl">Peta Kandungan Oksida Besi (Iron Oxide)</div>
+        <div class="ax-row">
+          <div class="ytk" style="padding-top:1px;">
+            <span>0</span><span>1000</span><span>2000</span><span>3000</span>
+            <span>4000</span><span>5000</span><span>6000</span><span>7000</span>
+          </div>
+          <div class="ax-col">
+            <div class="cwrap" id="wrap-iron">
+              <canvas id="canvas-iron"></canvas>
+              <div class="ph" id="ph-iron">Belum ada data<br>Jalankan komputasi</div>
             </div>
+            <div class="xtk">
+              <span>0</span><span>1000</span><span>2000</span><span>3000</span>
+              <span>4000</span><span>5000</span><span>6000</span><span>7000</span>
+            </div>
+          </div>
         </div>
+        <div class="cb-sec">
+          <div class="cb-track cb-reds"></div>
+          <div class="cb-tks"><span>0.0</span><span>0.2</span><span>0.4</span><span>0.6</span><span>0.8</span><span>1.0</span></div>
+          <div class="cb-lbl">1 = Terdeteksi, 0 = Tidak</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="sc"><div class="sv" id="si-pix">—</div><div class="sk">Piksel positif</div></div>
+        <div class="sc"><div class="sv" id="si-pct">—</div><div class="sk">Cakupan area</div></div>
+        <div class="sc"><div class="sv" id="si-thr">1.40</div><div class="sk">Threshold</div></div>
+      </div>
     </div>
 
-    <div id="main-content">
-        <div class="dashboard-header">
-            <h1>Workspace Analisis Spektral Multispektral</h1>
-        </div>
-
-        <div class="subplots-grid">
-            <div class="panel-plot">
-                <div class="plot-title">Peta Kandungan Oksida Besi (Iron Oxide)</div>
-                <div class="canvas-container">
-                    <div id="ph-iron" class="placeholder-text">Silakan masukkan data band dan klik "Jalankan Komputasi Citra"</div>
-                    <canvas id="canvas-iron" style="display: none;"></canvas>
-                </div>
-                <div class="colorbar-box" id="cb-box-iron">
-                    <div class="colorbar-gradient cb-reds"></div>
-                    <div class="colorbar-labels">
-                        <span>0 = Tidak Terdeteksi</span>
-                        <span>1 = Terdeteksi (Threshold &gt; 1.4)</span>
-                    </div>
-                </div>
+    <!-- CLAY -->
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <div class="mpl-fig clay-fig">
+        <div class="mpl-ttl">Peta Kandungan Mineral Lempung (Clay/Alunite)</div>
+        <div class="ax-row">
+          <div class="ytk" style="padding-top:1px;">
+            <span>0</span><span>1000</span><span>2000</span><span>3000</span>
+            <span>4000</span><span>5000</span><span>6000</span><span>7000</span>
+          </div>
+          <div class="ax-col">
+            <div class="cwrap" id="wrap-clay">
+              <canvas id="canvas-clay"></canvas>
+              <div class="ph" id="ph-clay">Belum ada data<br>Jalankan komputasi</div>
             </div>
-
-            <div class="panel-plot">
-                <div class="plot-title">Peta Kandungan Mineral Lempung (Clay/Alunite)</div>
-                <div class="canvas-container">
-                    <div id="ph-clay" class="placeholder-text">Silakan masukkan data band dan klik "Jalankan Komputasi Citra"</div>
-                    <canvas id="canvas-clay" style="display: none;"></canvas>
-                </div>
-                <div class="colorbar-box" id="cb-box-clay">
-                    <div class="colorbar-gradient cb-copper"></div>
-                    <div class="colorbar-labels">
-                        <span>0 = Tidak Terdeteksi</span>
-                        <span>1 = Terdeteksi (Threshold &gt; 1.5)</span>
-                    </div>
-                </div>
+            <div class="xtk">
+              <span>0</span><span>1000</span><span>2000</span><span>3000</span>
+              <span>4000</span><span>5000</span><span>6000</span><span>7000</span>
             </div>
+          </div>
         </div>
+        <div class="cb-sec">
+          <div class="cb-track cb-copper"></div>
+          <div class="cb-tks"><span>0.0</span><span>0.2</span><span>0.4</span><span>0.6</span><span>0.8</span><span>1.0</span></div>
+          <div class="cb-lbl">1 = Terdeteksi, 0 = Tidak</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="sc"><div class="sv" id="sc-pix">—</div><div class="sk">Piksel positif</div></div>
+        <div class="sc"><div class="sv" id="sc-pct">—</div><div class="sk">Cakupan area</div></div>
+        <div class="sc"><div class="sv" id="sc-thr">1.50</div><div class="sk">Threshold</div></div>
+      </div>
     </div>
+  </div>
+</div>
 
-    <script>
-        let dataBand = { b2: null, b4: null, b6: null, b7: null };
-        let petaIronBiner = null;
-        let petaClayBiner = null;
-        const resolusi = 300; 
+<script>
+const loadedBands = { b2: null, b4: null, b6: null, b7: null };
+const thr = { iron: 1.40, clay: 1.50 };
+let ratioI = null, ratioC = null;
+let hasDataI = null, hasDataC = null;
+let minRatioI = 0, maxRatioI = 1;
+let minRatioC = 0, maxRatioC = 1;
+const W = 512, H = 512;
 
-        function bacaFileBand(input, bandKey) {
-            if (input.files && input.files[0]) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvasMemori = document.createElement('canvas');
-                    canvasMemori.width = resolusi;
-                    canvasMemori.height = resolusi;
-                    const ctxMemori = canvasMemori.getContext('2d');
-                    ctxMemori.drawImage(img, 0, 0, resolusi, resolusi);
-                    
-                    const imgData = ctxMemori.getImageData(0, 0, resolusi, resolusi).data;
-                    let matriksFloat = new Float32Array(resolusi * resolusi);
-                    
-                    // Ekstraksi nilai piksel grayscale tunggal (Simulasi rasterio.read(1))
-                    for(let i = 0; i < matriksFloat.length; i++) {
-                        matriksFloat[i] = imgData[i * 4]; 
-                    }
-                    
-                    dataBand[bandKey] = matriksFloat;
-                    document.getElementById(bandKey + '-row').classList.add('loaded');
-                };
-                img.src = URL.createObjectURL(input.files[0]);
-            }
+async function handleBandUpload(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  setSL(`Membaca file ${file.name}...`);
+  try {
+    let data;
+    if (file.name.toLowerCase().endsWith('.tif') || file.name.toLowerCase().endsWith('.tiff')) {
+      const tiff = await GeoTIFF.fromBlob(file);
+      const image = await tiff.getImage();
+      const rasters = await image.readRasters({ width: W, height: H });
+      data = new Float32Array(rasters[0]);
+    } else {
+      data = await readImagePixels(file);
+    }
+    
+    loadedBands[id] = data;
+    
+    // UI update
+    const item = document.getElementById(id + '-item');
+    item.classList.add('loaded');
+    const svg = document.getElementById(id + '-icon');
+    svg.innerHTML = '<polyline points="2,9 6,13 14,4" stroke-width="2.2" stroke="currentColor" fill="none"/>';
+    
+    // Check if all bands are loaded
+    const count = Object.values(loadedBands).filter(val => val !== null).length;
+    const btn = document.getElementById('run-btn');
+    if (count < 4) {
+      setSL(`${count}/4 band dimuat — lengkapi semua`);
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.pointerEvents = 'none';
+    } else {
+      setSL('4/4 band siap — klik Jalankan');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+  } catch (err) {
+    console.error(err);
+    setSL(`Gagal membaca file: ${err.message}`);
+  }
+}
+
+function readImagePixels(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, W, H);
+        const imgData = ctx.getImageData(0, 0, W, H);
+        const data = new Float32Array(W * H);
+        for (let i = 0; i < W * H; i++) {
+          const r = imgData.data[i * 4];
+          const g = imgData.data[i * 4 + 1];
+          const b = imgData.data[i * 4 + 2];
+          data[i] = (r + g + b) / 3;
         }
+        resolve(data);
+      };
+      img.onerror = () => reject(new Error('Gagal memuat format gambar.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Gagal membaca file.'));
+    reader.readAsDataURL(file);
+  });
+}
 
-        function prosesLogikaNumpyWeb() {
-            // Validasi file seperti baris ke-19 pada Python Anda
-            if (!dataBand.b2 || !dataBand.b4 || !dataBand.b6 || !dataBand.b7) {
-                alert("[ERROR] File berikut tidak ditemukan:\nPastikan data piksel Band 2, 4, 6, dan 7 lengkap.");
-                return;
-            }
+function updateThresh(type, val) {
+  thr[type] = parseFloat(val);
+  document.getElementById('tv-' + type).textContent = parseFloat(val).toFixed(2);
+  document.getElementById(type === 'iron' ? 'si-thr' : 'sc-thr').textContent = parseFloat(val).toFixed(2);
+  if (ratioI) renderMaps();
+}
 
-            const loading = document.getElementById('loading-container');
-            const statusTeks = document.getElementById('status-tahapan');
-            const downloadBox = document.getElementById('download-wrapper');
+function setSL(m) { document.getElementById('sl').textContent = m; }
 
-            loading.style.display = 'block';
-            downloadBox.style.display = 'none';
+// matplotlib 'Reds' exact stops
+function redsColor(t) {
+  const s = [[255, 245, 240], [254, 224, 210], [252, 187, 161], [252, 146, 114], [251, 106, 74], [239, 59, 44], [203, 24, 29], [153, 0, 13]];
+  const i = Math.min(t, 0.9999) * (s.length - 1);
+  const lo = Math.floor(i), hi = Math.min(lo + 1, s.length - 1), f = i - lo;
+  const a = s[lo], b = s[hi];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
 
-            // Langkah 1: Membaca Citra
-            statusTeks.innerText = "[1/4] Membaca data piksel Band 2, 4, 6, dan 7...";
+// matplotlib 'copper' exact stops
+function copperColor(t) {
+  const s = [[0, 0, 0], [32, 20, 0], [80, 50, 0], [130, 82, 0], [178, 112, 5], [210, 133, 12], [242, 154, 20], [255, 199, 63]];
+  const i = Math.min(t, 0.9999) * (s.length - 1);
+  const lo = Math.floor(i), hi = Math.min(lo + 1, s.length - 1), f = i - lo;
+  const a = s[lo], b = s[hi];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
 
-            setTimeout(() => {
-                // Langkah 2: Band Ratioing ( np.where(band_blue == 0, 0, band_red / band_blue) )
-                statusTeks.innerText = "[2/4] Menghitung indeks rasio mineral...";
-                
-                let totalPixel = resolusi * resolusi;
-                let rasio_iron = new Float32Array(totalPixel);
-                let rasio_clay = new Float32Array(totalPixel);
+function renderMaps() {
+  const ci = document.getElementById('canvas-iron');
+  const cc = document.getElementById('canvas-clay');
+  ci.width = cc.width = W; ci.height = cc.height = H;
+  const ix = ci.getContext('2d'), cx = cc.getContext('2d');
+  const iImg = ix.createImageData(W, H);
+  const cImg = cx.createImageData(W, H);
+  let iDet = 0, cDet = 0;
+  let totalActiveI = 0, totalActiveC = 0;
 
-                for(let i = 0; i < totalPixel; i++) {
-                    // Rasio Iron = Red / Blue
-                    let blue = dataBand.b2[i];
-                    rasio_iron[i] = (blue === 0) ? 0 : (dataBand.b4[i] / blue);
+  for (let i = 0; i < W * H; i++) {
+    const p = i * 4;
+    
+    // Iron Oxide Map
+    if (!hasDataI[i]) {
+      iImg.data[p] = 255; iImg.data[p + 1] = 248; iImg.data[p + 2] = 244; iImg.data[p + 3] = 255;
+    } else {
+      totalActiveI++;
+      const rI = ratioI[i];
+      const dI = rI >= thr.iron;
+      if (dI) iDet++;
+      
+      if (dI) {
+        // Normalize from threshold to max ratio — detected pixels always get visible color
+        const aboveRange = maxRatioI - thr.iron;
+        const rawNorm = aboveRange > 0 ? (rI - thr.iron) / aboveRange : 0;
+        // Clamp to [0.25, 1.0] so minimum detected color is clearly visible salmon-red
+        const normI = 0.25 + Math.min(rawNorm, 1) * 0.75;
+        const [r1, g1, b1] = redsColor(normI);
+        iImg.data[p] = r1; iImg.data[p + 1] = g1; iImg.data[p + 2] = b1; iImg.data[p + 3] = 255;
+      } else {
+        // Not detected: white background
+        iImg.data[p] = 255; iImg.data[p + 1] = 248; iImg.data[p + 2] = 244; iImg.data[p + 3] = 255;
+      }
+    }
 
-                    // Rasio Clay = SWIR 1 / SWIR 2
-                    let swir2 = dataBand.b7[i];
-                    rasio_clay[i] = (swir2 === 0) ? 0 : (dataBand.b6[i] / swir2);
-                }
+    // Clay Map
+    if (!hasDataC[i]) {
+      cImg.data[p] = 0; cImg.data[p + 1] = 0; cImg.data[p + 2] = 0; cImg.data[p + 3] = 255;
+    } else {
+      totalActiveC++;
+      const rC = ratioC[i];
+      const dC = rC >= thr.clay;
+      if (dC) cDet++;
+      
+      if (dC) {
+        // Normalize from threshold to max ratio — detected pixels always get visible color
+        const aboveRangeC = maxRatioC - thr.clay;
+        const rawNormC = aboveRangeC > 0 ? (rC - thr.clay) / aboveRangeC : 0;
+        // Clamp to [0.2, 1.0] so minimum detected color is clearly visible dark copper
+        const normC = 0.2 + Math.min(rawNormC, 1) * 0.8;
+        const [r2, g2, b2] = copperColor(normC);
+        cImg.data[p] = r2; cImg.data[p + 1] = g2; cImg.data[p + 2] = b2; cImg.data[p + 3] = 255;
+      } else {
+        // Not detected: black background
+        cImg.data[p] = 0; cImg.data[p + 1] = 0; cImg.data[p + 2] = 0; cImg.data[p + 3] = 255;
+      }
+    }
+  }
 
-                setTimeout(() => {
-                    // Langkah 3: Klasifikasi Thresholding Tegas 
-                    statusTeks.innerText = "[3/4] Menerapkan threshold (Iron: 1.4, Clay: 1.5)...";
-                    
-                    petaIronBiner = new Uint8Array(totalPixel);
-                    petaClayBiner = new Uint8Array(totalPixel);
+  ix.putImageData(iImg, 0, 0);
+  cx.putImageData(cImg, 0, 0);
+  document.getElementById('ph-iron').style.display = 'none';
+  document.getElementById('ph-clay').style.display = 'none';
+  ci.style.display = 'block'; cc.style.display = 'block';
 
-                    for(let i = 0; i < totalPixel; i++) {
-                        petaIronBiner[i] = (rasio_iron[i] > 1.4) ? 1 : 0;
-                        petaClayBiner[i] = (rasio_clay[i] > 1.5) ? 1 : 0;
-                    }
+  const denomI = totalActiveI > 0 ? totalActiveI : W * H;
+  const denomC = totalActiveC > 0 ? totalActiveC : W * H;
+  
+  document.getElementById('si-pix').textContent = iDet.toLocaleString('id');
+  document.getElementById('si-pct').textContent = (iDet / denomI * 100).toFixed(1) + '%';
+  document.getElementById('sc-pix').textContent = cDet.toLocaleString('id');
+  document.getElementById('sc-pct').textContent = (cDet / denomC * 100).toFixed(1) + '%';
+  document.getElementById('dl-iron').classList.add('visible');
+  document.getElementById('dl-clay').classList.add('visible');
+}
 
-                    setTimeout(() => {
-                        // Langkah 4: Plotting Visualisasi Berdampingan (Side-by-Side)
-                        statusTeks.innerText = "[4/4] Menyimpan dan menampilkan citra hasil olahan...";
-                        
-                        document.getElementById('ph-iron').style.display = 'none';
-                        document.getElementById('ph-clay').style.display = 'none';
-                        document.getElementById('cb-box-iron').style.display = 'block';
-                        document.getElementById('cb-box-clay').style.display = 'block';
+function runAnalysis() {
+  const btn = document.getElementById('run-btn');
+  btn.style.opacity = '0.55'; btn.style.pointerEvents = 'none';
+  const pw = document.getElementById('pw'), pb = document.getElementById('pb');
+  pw.classList.add('active'); pb.style.width = '0';
+  
+  const steps = [
+    [150, 22, '[1/4] Membaca piksel Band 2, 4, 6, dan 7...'],
+    [420, 52, '[2/4] Menghitung indeks rasio mineral...'],
+    [700, 80, `[3/4] Menerapkan threshold (Iron: ${thr.iron.toFixed(2)}, Clay: ${thr.clay.toFixed(2)})...`],
+    [960, 100, '[4/4] Menyimpan dan menampilkan citra hasil...'],
+  ];
+  
+  steps.forEach(([d, p, m]) => setTimeout(() => { pb.style.width = p + '%'; setSL(m); }, d));
+  
+  setTimeout(() => {
+    // Perform actual calculation
+    const b2 = loadedBands.b2;
+    const b4 = loadedBands.b4;
+    const b6 = loadedBands.b6;
+    const b7 = loadedBands.b7;
 
-                        // Render Canvas Plotting
-                        drawPetaBiner('canvas-iron', petaIronBiner, 'Reds');
-                        drawPetaBiner('canvas-clay', petaClayBiner, 'copper');
+    ratioI = new Float32Array(W * H);
+    ratioC = new Float32Array(W * H);
+    hasDataI = new Uint8Array(W * H);
+    hasDataC = new Uint8Array(W * H);
 
-                        loading.style.display = 'none';
-                        downloadBox.style.display = 'flex';
-                    }, 500);
-                }, 500);
-            }, 500);
-        }
+    let maxI = 0, minI = Infinity;
+    let maxC = 0, minC = Infinity;
 
-        function drawPetaBiner(canvasId, arrayBiner, cmap) {
-            const canvas = document.getElementById(canvasId);
-            const ctx = canvas.getContext('2d');
-            canvas.width = resolusi;
-            canvas.height = resolusi;
-            canvas.style.display = 'block';
+    for (let i = 0; i < W * H; i++) {
+      // Iron Oxide
+      if (b2[i] > 0) {
+        ratioI[i] = b4[i] / b2[i];
+        hasDataI[i] = 1;
+        if (ratioI[i] > maxI) maxI = ratioI[i];
+        if (ratioI[i] < minI) minI = ratioI[i];
+      } else {
+        ratioI[i] = 0;
+        hasDataI[i] = 0;
+      }
 
-            const imgData = ctx.createImageData(resolusi, resolusi);
-            const data = imgData.data;
+      // Clay / Alunite
+      if (b7[i] > 0) {
+        ratioC[i] = b6[i] / b7[i];
+        hasDataC[i] = 1;
+        if (ratioC[i] > maxC) maxC = ratioC[i];
+        if (ratioC[i] < minC) minC = ratioC[i];
+      } else {
+        ratioC[i] = 0;
+        hasDataC[i] = 0;
+      }
+    }
 
-            for(let i = 0; i < arrayBiner.length; i++) {
-                let idx = i * 4;
-                let val = arrayBiner[i];
+    minRatioI = minI === Infinity ? 0 : minI;
+    maxRatioI = maxI;
+    minRatioC = minC === Infinity ? 0 : minC;
+    maxRatioC = maxC;
 
-                if (cmap === 'Reds') {
-                    // 1 = Terdeteksi (Merah Matplotlib), 0 = Tidak (Putih Bersih)
-                    if (val === 1) {
-                        data[idx] = 203; data[idx+1] = 24; data[idx+2] = 29;
-                    } else {
-                        data[idx] = 255; data[idx+1] = 255; data[idx+2] = 255;
-                    }
-                } else if (cmap === 'copper') {
-                    // 1 = Terdeteksi (Tembaga/Emas), 0 = Tidak (Hitam Pekat)
-                    if (val === 1) {
-                        data[idx] = 225; data[idx+1] = 160; data[idx+2] = 100;
-                    } else {
-                        data[idx] = 0; data[idx+1] = 0; data[idx+2] = 0;
-                    }
-                }
-                data[idx+3] = 255; 
-            }
-            ctx.putImageData(imgData, 0, 0);
-        }
+    renderMaps();
+    
+    pw.classList.remove('active');
+    btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+    setSL('[SUKSES] Seluruh file hasil (.tif) berhasil dibuat!');
+  }, 1200);
+}
 
-        function unduhTiffBinerMurni(jenis) {
-            let dataArr = (jenis === 'iron') ? petaIronBiner : petaClayBiner;
-            if(!dataArr) return;
-
-            const totalPixels = resolusi * resolusi;
-            const buffer = new ArrayBuffer(totalPixels + 154);
-            const view = new DataView(buffer);
-            
-            view.setUint16(0, 0x4949, true); 
-            view.setUint16(2, 42, true);
-            view.setUint32(4, totalPixels + 8, true);
-            
-            for (let i = 0; i < totalPixels; i++) {
-                view.setUint8(8 + i, dataArr[i]);
-            }
-            
-            let o = totalPixels + 8;
-            view.setUint16(o, 4, true); o += 2;
-            const writeTag = (t, ty, c, v) => {
-                view.setUint16(o, t, true); view.setUint16(o+2, ty, true);
-                view.setUint32(o+4, c, true); view.setUint32(o+8, v, true); o += 12;
-            };
-            writeTag(256, 3, 1, resolusi);
-            writeTag(257, 3, 1, resolusi);
-            writeTag(258, 3, 1, 8);
-            writeTag(273, 4, 1, 8);
-            
-            const blob = new Blob([buffer], { type: "image/tiff" });
-            const dl = document.createElement("a");
-            dl.href = URL.createObjectURL(blob);
-            dl.download = (jenis === 'iron') ? "Hasil_Oksida_Besi.tif" : "Hasil_Mineral_Lempung.tif";
-            dl.click();
-        }
-    </script>
+function downloadTiff(type) {
+  const w = 256, h = 256, tot = w * h;
+  const buf = new ArrayBuffer(tot + 154);
+  const view = new DataView(buf);
+  view.setUint16(0, 0x4949, true); view.setUint16(2, 42, true); view.setUint32(4, tot + 8, true);
+  const src = type === 'iron' ? ratioI : ratioC;
+  const t = thr[type];
+  for (let i = 0; i < tot; i++) {
+    const x = i % w, y = Math.floor(i / w);
+    const sx = Math.floor(x * W / w), sy = Math.floor(y * H / h);
+    const r = src ? src[sy * W + sx] : 0;
+    view.setUint8(8 + i, r >= t ? 1 : 0);
+  }
+  let o = tot + 8;
+  view.setUint16(o, 4, true); o += 2;
+  const wt = (t, ty, c, v) => { view.setUint16(o, t, true); view.setUint16(o + 2, ty, true); view.setUint32(o + 4, c, true); view.setUint32(o + 8, v, true); o += 12; };
+  wt(256, 3, 1, w); wt(257, 3, 1, h); wt(258, 3, 1, 8); wt(273, 4, 1, 8);
+  const blob = new Blob([buf], { type: 'image/tiff' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = type === 'iron' ? 'Hasil_Oksida_Besi.tif' : 'Hasil_Mineral_Lempung.tif';
+  a.click();
+}
+</script>
 </body>
 </html>
