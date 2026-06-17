@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinX Geo - True Raster Processing Engine</title>
+    <title>GeoMinX - Multi-Band Mineral Detection</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { display: flex; height: 100vh; background-color: #030712; color: var(--text-main); overflow: hidden; }
         
-        /* SIDEBAR PANEL */
+        /* SIDEBAR PANEL CONTROL */
         #sidebar { 
             width: 350px; 
             background: var(--bg-secondary); 
@@ -80,7 +80,7 @@
         .btn-primary:hover { background: #7dd3fc; }
         
         .download-box { display: none; flex-direction: column; gap: 8px; margin-top: 5px; }
-        .btn-success { background: #1e293b; color: #f3f4f6; border: 1px solid #374151; cursor: pointer; padding: 10px; font-size: 0.8rem; text-align: center;}
+        .btn-success { background: #1e293b; color: #f3f4f6; border: 1px solid #374151; cursor: pointer; padding: 10px; font-size: 0.8rem; text-align: center; }
         .btn-success:hover { background: #334155; border-color: var(--accent); }
 
         #loading-container { display: none; margin-top: 10px; }
@@ -89,7 +89,7 @@
         .progress-fill { width: 0%; height: 100%; background: var(--accent); animation: load 1.5s linear forwards; }
         @keyframes load { to { width: 100%; } }
 
-        /* AREA DISPLAY SUBPLOTS SIDE-BY-SIDE */
+        /* AREA WORKSPACE UTAMA (SIDE-BY-SIDE PLOT) */
         #main-content { flex-grow: 1; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
         .dashboard-header h1 { font-size: 1.3rem; font-weight: 600; }
 
@@ -114,7 +114,7 @@
         
         .canvas-container {
             width: 100%;
-            height: 340px;
+            height: 360px;
             background: #000;
             border-radius: 6px;
             display: flex;
@@ -126,15 +126,15 @@
         canvas { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
         .placeholder-text { font-size: 0.8rem; color: #4b5563; text-align: center; padding: 20px; }
 
-        /* COLORBAR HORIZONTAL MULTI-MINERAL */
+        /* COLORBAR HORIZONTAL (GAYA MATPLOTLIB) */
         .colorbar-box {
             display: none;
             margin-top: 5px;
             padding: 0 10px;
         }
         .colorbar-gradient { height: 14px; border-radius: 2px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.1); }
-        .cb-reds { background: linear-gradient(to right, #ffffff, #fee5d9, #cb181d); }
-        .cb-copper { background: linear-gradient(to right, #000000, #4a2700, #ffcc80); }
+        .cb-reds { background: linear-gradient(to right, #fee5d9, #fcae91, #fb6a4a, #cb181d); }
+        .cb-copper { background: linear-gradient(to right, #000000, #331a00, #995c00, #ffcc80); }
         .colorbar-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #9ca3af; }
     </style>
 </head>
@@ -142,23 +142,23 @@
 
     <div id="sidebar">
         <div class="brand">
-            <h2>MinX Geo</h2>
-            <p>True NumPy & Rasterio Web Engine</p>
+            <h2>GeoMinX</h2>
+            <p>Multi-Band Mineral Processor</p>
         </div>
         <hr>
         
         <div class="step-card">
-            <div class="step-title">1. Unggah Landsat 8 Band (.TIF/.PNG)</div>
+            <div class="step-title">1. Masukkan File Gambar Band</div>
             <div class="band-upload-grid">
-                <div class="band-row" id="b2-row"><span class="band-label">Band 2 (Blue)</span><input type="file" id="b2" class="file-btn" onchange="bacaArrayPiksel(this, 'b2')"></div>
-                <div class="band-row" id="b4-row"><span class="band-label">Band 4 (Red)</span><input type="file" id="b4" class="file-btn" onchange="bacaArrayPiksel(this, 'b4')"></div>
-                <div class="band-row" id="b6-row"><span class="band-label">Band 6 (SWIR 1)</span><input type="file" id="b6" class="file-btn" onchange="bacaArrayPiksel(this, 'b6')"></div>
-                <div class="band-row" id="b7-row"><span class="band-label">Band 7 (SWIR 2)</span><input type="file" id="b7" class="file-btn" onchange="bacaArrayPiksel(this, 'b7')"></div>
+                <div class="band-row" id="b2-row"><span class="band-label">Band 2 (Blue)</span><input type="file" id="b2" class="file-btn" onchange="bacaFileBand(this, 'b2')"></div>
+                <div class="band-row" id="b4-row"><span class="band-label">Band 4 (Red)</span><input type="file" id="b4" class="file-btn" onchange="bacaFileBand(this, 'b4')"></div>
+                <div class="band-row" id="b6-row"><span class="band-label">Band 6 (SWIR 1)</span><input type="file" id="b6" class="file-btn" onchange="bacaFileBand(this, 'b6')"></div>
+                <div class="band-row" id="b7-row"><span class="band-label">Band 7 (SWIR 2)</span><input type="file" id="b7" class="file-btn" onchange="bacaFileBand(this, 'b7')"></div>
             </div>
         </div>
 
         <div>
-            <button class="btn btn-primary" onclick="kalkulasiMatriksTrueEngine()">Jalankan Komputasi Citra</button>
+            <button class="btn btn-primary" onclick="prosesLogikaNumpyWeb()">Jalankan Komputasi Citra</button>
             
             <div id="loading-container">
                 <div class="progress-text" id="status-tahapan">[1/4] Membaca data piksel...</div>
@@ -166,29 +166,29 @@
             </div>
 
             <div class="download-box" id="download-wrapper">
-                <button class="btn btn-success" onclick="eksporTifBinerMurni('iron')">💾 Simpan Hasil_Oksida_Besi.tif</button>
-                <button class="btn btn-success" onclick="eksporTifBinerMurni('clay')">💾 Simpan Hasil_Mineral_Lempung.tif</button>
+                <button class="btn btn-success" onclick="unduhTiffBinerMurni('iron')">💾 Simpan Hasil_Oksida_Besi.tif</button>
+                <button class="btn btn-success" onclick="unduhTiffBinerMurni('clay')">💾 Simpan Hasil_Mineral_Lempung.tif</button>
             </div>
         </div>
     </div>
 
     <div id="main-content">
         <div class="dashboard-header">
-            <h1>Visualisasi Matplotlib Analisis Multi-Mineral (True Native Processing)</h1>
+            <h1>Workspace Analisis Spektral Multispektral</h1>
         </div>
 
         <div class="subplots-grid">
             <div class="panel-plot">
                 <div class="plot-title">Peta Kandungan Oksida Besi (Iron Oxide)</div>
                 <div class="canvas-container">
-                    <div id="ph-iron" class="placeholder-text">Menunggu pemrosesan matriks raster...</div>
+                    <div id="ph-iron" class="placeholder-text">Silakan masukkan data band dan klik "Jalankan Komputasi Citra"</div>
                     <canvas id="canvas-iron" style="display: none;"></canvas>
                 </div>
                 <div class="colorbar-box" id="cb-box-iron">
                     <div class="colorbar-gradient cb-reds"></div>
                     <div class="colorbar-labels">
                         <span>0 = Tidak Terdeteksi</span>
-                        <span>1 = Terdeteksi (Threshold > 1.4)</span>
+                        <span>1 = Terdeteksi (Threshold &gt; 1.4)</span>
                     </div>
                 </div>
             </div>
@@ -196,14 +196,14 @@
             <div class="panel-plot">
                 <div class="plot-title">Peta Kandungan Mineral Lempung (Clay/Alunite)</div>
                 <div class="canvas-container">
-                    <div id="ph-clay" class="placeholder-text">Menunggu pemrosesan matriks raster...</div>
+                    <div id="ph-clay" class="placeholder-text">Silakan masukkan data band dan klik "Jalankan Komputasi Citra"</div>
                     <canvas id="canvas-clay" style="display: none;"></canvas>
                 </div>
                 <div class="colorbar-box" id="cb-box-clay">
                     <div class="colorbar-gradient cb-copper"></div>
                     <div class="colorbar-labels">
                         <span>0 = Tidak Terdeteksi</span>
-                        <span>1 = Terdeteksi (Threshold > 1.5)</span>
+                        <span>1 = Terdeteksi (Threshold &gt; 1.5)</span>
                     </div>
                 </div>
             </div>
@@ -211,44 +211,40 @@
     </div>
 
     <script>
-        // Tempat penyimpanan array matriks spasial asli dari file input
-        let matriksPikselSaluran = { b2: null, b4: null, b6: null, b7: null };
-        let ukuranRaster = { w: 300, h: 300 }; // Default fall-back size
-        let hasilMaskingIron = null;
-        let hasilMaskingClay = null;
+        let dataBand = { b2: null, b4: null, b6: null, b7: null };
+        let petaIronBiner = null;
+        let petaClayBiner = null;
+        const resolusi = 300; 
 
-        // FUNGSI UTAMA: Membaca struktur file biner TIF/Gambar asli ke Array Memori
-        function bacaArrayPiksel(input, bandId) {
+        function bacaFileBand(input, bandKey) {
             if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    const arrayBuffer = e.target.result;
-                    const view = new DataView(arrayBuffer);
+                const img = new Image();
+                img.onload = function() {
+                    const canvasMemori = document.createElement('canvas');
+                    canvasMemori.width = resolusi;
+                    canvasMemori.height = resolusi;
+                    const ctxMemori = canvasMemori.getContext('2d');
+                    ctxMemori.drawImage(img, 0, 0, resolusi, resolusi);
                     
-                    // Alokasi memori array piksel (Simulasi ekstraksi Rasterio)
-                    let totalPiksel = ukuranRaster.w * ukuranRaster.h;
-                    let floatArray = new Float32Array(totalPiksel);
+                    const imgData = ctxMemori.getImageData(0, 0, resolusi, resolusi).data;
+                    let matriksFloat = new Float32Array(resolusi * resolusi);
                     
-                    // Ekstraksi nilai piksel dari ArrayBuffer
-                    let offsetAcak = arrayBuffer.byteLength > totalPiksel ? 100 : 0;
-                    for(let i=0; i<totalPiksel; i++) {
-                        let byteVal = view.getUint8(offsetAcak + (i % (arrayBuffer.byteLength - offsetAcak)));
-                        floatArray[i] = byteVal; // Ambil nilai reflektansi asli tanah
+                    // Ekstraksi nilai piksel grayscale tunggal (Simulasi rasterio.read(1))
+                    for(let i = 0; i < matriksFloat.length; i++) {
+                        matriksFloat[i] = imgData[i * 4]; 
                     }
-
-                    matriksPikselSaluran[bandId] = floatArray;
-                    document.getElementById(bandId + '-row').classList.add('loaded');
+                    
+                    dataBand[bandKey] = matriksFloat;
+                    document.getElementById(bandKey + '-row').classList.add('loaded');
                 };
-                reader.readAsArrayBuffer(file);
+                img.src = URL.createObjectURL(input.files[0]);
             }
         }
 
-        // FUNGSI UTAMA: Menggantikan np.where dan np.errstate milik Python
-        function kalkulasiMatriksTrueEngine() {
-            if (!matriksPikselSaluran.b2 || !matriksPikselSaluran.b4 || !matriksPikselSaluran.b6 || !matriksPikselSaluran.b7) {
-                alert("[ERROR] Berkas tidak ditemukan!\nPastikan Anda telah memasukkan seluruh file Band 2, 4, 6, dan 7.");
+        function prosesLogikaNumpyWeb() {
+            // Validasi file seperti baris ke-19 pada Python Anda
+            if (!dataBand.b2 || !dataBand.b4 || !dataBand.b6 || !dataBand.b7) {
+                alert("[ERROR] File berikut tidak ditemukan:\nPastikan data piksel Band 2, 4, 6, dan 7 lengkap.");
                 return;
             }
 
@@ -259,137 +255,124 @@
             loading.style.display = 'block';
             downloadBox.style.display = 'none';
 
-            // Tahap 1: Pembacaan Citra
+            // Langkah 1: Membaca Citra
             statusTeks.innerText = "[1/4] Membaca data piksel Band 2, 4, 6, dan 7...";
 
             setTimeout(() => {
-                // Tahap 2: Band Ratioing (Mencegah Divide by Zero)
+                // Langkah 2: Band Ratioing ( np.where(band_blue == 0, 0, band_red / band_blue) )
                 statusTeks.innerText = "[2/4] Menghitung indeks rasio mineral...";
                 
-                let totalSize = ukuranRaster.w * ukuranRaster.h;
-                let rasio_iron = new Float32Array(totalSize);
-                let rasio_clay = new Float32Array(totalSize);
+                let totalPixel = resolusi * resolusi;
+                let rasio_iron = new Float32Array(totalPixel);
+                let rasio_clay = new Float32Array(totalPixel);
 
-                for (let i = 0; i < totalSize; i++) {
-                    let b2 = matriksPikselSaluran.b2[i];
-                    let paddingX = (i % ukuranRaster.w) / ukuranRaster.w;
-                    let paddingY = Math.floor(i / ukuranRaster.w) / ukuranRaster.h;
-                    
-                    // Logika Rasio Oksida Besi (Red / Blue) + Modifikasi kontur sebaran geologi asli
-                    let pengaliAlami = Math.sin(paddingX * 6) * Math.cos(paddingY * 6) * 0.5 + 1.2;
-                    rasio_iron[i] = b2 === 0 ? 0 : (matriksPikselSaluran.b4[i] / b2) * pengaliAlami;
+                for(let i = 0; i < totalPixel; i++) {
+                    // Rasio Iron = Red / Blue
+                    let blue = dataBand.b2[i];
+                    rasio_iron[i] = (blue === 0) ? 0 : (dataBand.b4[i] / blue);
 
-                    // Logika Rasio Mineral Lempung (SWIR 1 / SWIR 2)
-                    let b7 = matriksPikselSaluran.b7[i];
-                    rasio_clay[i] = b7 === 0 ? 0 : (matriksPikselSaluran.b6[i] / b7) * pengaliAlami;
+                    // Rasio Clay = SWIR 1 / SWIR 2
+                    let swir2 = dataBand.b7[i];
+                    rasio_clay[i] = (swir2 === 0) ? 0 : (dataBand.b6[i] / swir2);
                 }
 
                 setTimeout(() => {
-                    // Tahap 3: Klasifikasi Thresholding Tegas (Iron: 1.4, Clay: 1.5)
+                    // Langkah 3: Klasifikasi Thresholding Tegas 
                     statusTeks.innerText = "[3/4] Menerapkan threshold (Iron: 1.4, Clay: 1.5)...";
                     
-                    hasilMaskingIron = new Uint8Array(totalSize);
-                    hasilMaskingClay = new Uint8Array(totalSize);
+                    petaIronBiner = new Uint8Array(totalPixel);
+                    petaClayBiner = new Uint8Array(totalPixel);
 
-                    for(let i=0; i<totalSize; i++) {
-                        hasilMaskingIron[i] = rasio_iron[i] > 1.4 ? 1 : 0;
-                        hasilMaskingClay[i] = rasio_clay[i] > 1.5 ? 1 : 0;
+                    for(let i = 0; i < totalPixel; i++) {
+                        petaIronBiner[i] = (rasio_iron[i] > 1.4) ? 1 : 0;
+                        petaClayBiner[i] = (rasio_clay[i] > 1.5) ? 1 : 0;
                     }
 
                     setTimeout(() => {
-                        // Tahap 4: Rendering Grafik Output Matplotlib ke Layar Browser
+                        // Langkah 4: Plotting Visualisasi Berdampingan (Side-by-Side)
                         statusTeks.innerText = "[4/4] Menyimpan dan menampilkan citra hasil olahan...";
                         
-                        // Sembunyikan placeholders & munculkan colorbar
                         document.getElementById('ph-iron').style.display = 'none';
                         document.getElementById('ph-clay').style.display = 'none';
                         document.getElementById('cb-box-iron').style.display = 'block';
                         document.getElementById('cb-box-clay').style.display = 'block';
 
-                        // Gambar Subplot Kiri: Iron Oxide (Cmap: 'Reds')
-                        renderCanvasPeta('canvas-iron', hasilMaskingIron, 'iron');
-                        // Gambar Subplot Kanan: Clay Mineral (Cmap: 'copper')
-                        renderCanvasPeta('canvas-clay', hasilMaskingClay, 'clay');
+                        // Render Canvas Plotting
+                        drawPetaBiner('canvas-iron', petaIronBiner, 'Reds');
+                        drawPetaBiner('canvas-clay', petaClayBiner, 'copper');
 
                         loading.style.display = 'none';
                         downloadBox.style.display = 'flex';
-                    }, 600);
-                }, 600);
-            }, 600);
+                    }, 500);
+                }, 500);
+            }, 500);
         }
 
-        // Fungsi pewarnaan piksel biner tegas (0 dan 1) ke elemen canvas web
-        function renderCanvasPeta(canvasId, arrayMasking, tipeCmap) {
+        function drawPetaBiner(canvasId, arrayBiner, cmap) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
-            canvas.width = ukuranRaster.w;
-            canvas.height = ukuranRaster.h;
+            canvas.width = resolusi;
+            canvas.height = resolusi;
             canvas.style.display = 'block';
 
-            const imgData = ctx.createImageData(canvas.width, canvas.height);
+            const imgData = ctx.createImageData(resolusi, resolusi);
             const data = imgData.data;
 
-            for(let i=0; i<arrayMasking.length; i++) {
+            for(let i = 0; i < arrayBiner.length; i++) {
                 let idx = i * 4;
-                let nilaiBiner = arrayMasking[i];
+                let val = arrayBiner[i];
 
-                if (tipeCmap === 'iron') {
-                    // Cmap 'Reds' Biner: 1 = Merah Darah pekat, 0 = Putih bersih
-                    if (nilaiBiner === 1) {
-                        data[idx] = 189; data[idx+1] = 0; data[idx+2] = 38;
+                if (cmap === 'Reds') {
+                    // 1 = Terdeteksi (Merah Matplotlib), 0 = Tidak (Putih Bersih)
+                    if (val === 1) {
+                        data[idx] = 203; data[idx+1] = 24; data[idx+2] = 29;
                     } else {
                         data[idx] = 255; data[idx+1] = 255; data[idx+2] = 255;
                     }
-                } else {
-                    // Cmap 'copper' Biner: 1 = Tembaga mengkilap/Emas Tua, 0 = Hitam Pekat
-                    if (nilaiBiner === 1) {
-                        data[idx] = 217; data[idx+1] = 140; data[idx+2] = 78;
+                } else if (cmap === 'copper') {
+                    // 1 = Terdeteksi (Tembaga/Emas), 0 = Tidak (Hitam Pekat)
+                    if (val === 1) {
+                        data[idx] = 225; data[idx+1] = 160; data[idx+2] = 100;
                     } else {
                         data[idx] = 0; data[idx+1] = 0; data[idx+2] = 0;
                     }
                 }
-                data[idx+3] = 255; // Solid Alpha
+                data[idx+3] = 255; 
             }
             ctx.putImageData(imgData, 0, 0);
         }
 
-        // FUNGSI UTAMA: Menggantikan fungsi penulisan berkas rasterio.open('w', **meta_output) ke laptop
-        function eksporTifBinerMurni(jenis) {
-            let dataArray = jenis === 'iron' ? hasilMaskingIron : hasilMaskingClay;
-            if(!dataArray) return;
+        function unduhTiffBinerMurni(jenis) {
+            let dataArr = (jenis === 'iron') ? petaIronBiner : petaClayBiner;
+            if(!dataArr) return;
 
-            const width = ukuranRaster.w;
-            const height = ukuranRaster.h;
-            const totalPixels = width * height;
-            
-            // Mengemas struktur biner header TIFF asli agar langsung kompatibel di ArcGIS / QGIS
+            const totalPixels = resolusi * resolusi;
             const buffer = new ArrayBuffer(totalPixels + 154);
             const view = new DataView(buffer);
             
-            view.setUint16(0, 0x4949, true); // Little Endian format "II"
+            view.setUint16(0, 0x4949, true); 
             view.setUint16(2, 42, true);
             view.setUint32(4, totalPixels + 8, true);
             
-            // Suntik nilai biner (1 dan 0) asli hasil olahan citra ke file
             for (let i = 0; i < totalPixels; i++) {
-                view.setUint8(8 + i, dataArray[i]);
+                view.setUint8(8 + i, dataArr[i]);
             }
             
             let o = totalPixels + 8;
             view.setUint16(o, 4, true); o += 2;
-            const tulisTagTiff = (t, ty, c, v) => {
+            const writeTag = (t, ty, c, v) => {
                 view.setUint16(o, t, true); view.setUint16(o+2, ty, true);
                 view.setUint32(o+4, c, true); view.setUint32(o+8, v, true); o += 12;
             };
-            tulisTagTiff(256, 3, 1, width);  // Lebar Citra
-            tulisTagTiff(257, 3, 1, height); // Tinggi Citra
-            tulisTagTiff(258, 3, 1, 8);      // Kedalaman Bit (Uint8)
-            tulisTagTiff(273, 4, 1, 8);      // Offset Data Piksel
+            writeTag(256, 3, 1, resolusi);
+            writeTag(257, 3, 1, resolusi);
+            writeTag(258, 3, 1, 8);
+            writeTag(273, 4, 1, 8);
             
             const blob = new Blob([buffer], { type: "image/tiff" });
             const dl = document.createElement("a");
             dl.href = URL.createObjectURL(blob);
-            dl.download = jenis === 'iron' ? "Hasil_Oksida_Besi.tif" : "Hasil_Mineral_Lempung.tif";
+            dl.download = (jenis === 'iron') ? "Hasil_Oksida_Besi.tif" : "Hasil_Mineral_Lempung.tif";
             dl.click();
         }
     </script>
